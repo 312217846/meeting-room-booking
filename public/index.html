@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>财富管理 · 会议室预定系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #C9A96E;
+            --primary-dark: #A88B4A;
+            --primary-light: #F5ECD7;
+            --primary-lighter: #FAF5E8;
+            --vip-gold: #D4AF37;
+            --vip-gold-light: #2A2218;
+            --vip-black: #1A1A1A;
+            --vip-black-light: #2D2D2D;
+            --admin-red: #C0392B;
+            --bg-gray: #FAF7F0;
+            --bg-dark: #1A1714;
+            --text-primary: #2C2417;
+            --text-secondary: #8E7E6A;
+            --border: #E8DFD0;
+            --success: #4A9D5B;
+            --danger: #C0392B;
+            --warning: #D4AF37;
+            --card-shadow: 0 2px 12px rgba(201,169,110,0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* PC端适配 - 宽屏布局 */
+        @media (min-width: 769px) {
+            body {
+                background: var(--bg-gray);
+            }
+            #app {
+                max-width: none;
+                margin: 0;
+                padding-bottom: 0;
+            }
+            
+            /* 显示PC端侧边导航 */
+            .pc-sidebar-nav {
+                display: flex !important;
+                flex-direction: column;
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 240px;
+                height: 100vh;
+                background: white;
+                border-right: 1px solid var(--border);
+                z-index: 100;
+                padding: 24px 16px;
+            }
+            
+            .pc-nav-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding-bottom: 24px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 16px;
+            }
+            
+            .pc-nav-header .header-logo {
+                width: 40px;
+                height: 40px;
+                background: var(--primary);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .pc-nav-header .header-logo svg {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .pc-nav-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            .pc-nav-items {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .pc-nav-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+                border-radius: 12px;
+                cursor: pointer;
+                transition: all 0.2s;
+                color: var(--text-secondary);
+            }
+            
+            .pc-nav-item:hover {
+                background: var(--bg-gray);
+                color: var(--text-primary);
+            }
+            
+            .pc-nav-item.active {
+                background: var(--primary-light);
+                color: var(--primary-dark);
+            }
+            
+            .pc-nav-item .nav-icon {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .pc-nav-item span {
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .pc-nav-footer {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border);
+            }
+            
+            .pc-user-info {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+            
+            .pc-user-info span:first-child {
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--text-primary);
+            }
+            
+            .pc-user-badge {
+                font-size: 12px;
+                color: var(--primary);
+            }
+            
+            /* 主内容区 */
+            .main-content-wrapper {
+                margin-left: 240px;
+                min-height: 100vh;
+            }
+            
+            /* 隐藏移动端底部导航 */
+            .bottom-nav {
+                display: none !important;
+            }
+            
+            /* 隐藏移动端顶部header */
+            .header {
+                display: none;
+            }
+            
+            /* 首页会议室网格 - PC端多列 */
+            .rooms-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+                padding: 24px;
+            }
+            
+            /* 会议室卡片 */
+            .room-card {
+                margin: 0;
+            }
+            
+            /* 预订页面布局 */
+            .booking-layout {
+                display: grid;
+                grid-template-columns: 360px 1fr;
+                gap: 24px;
+                padding: 24px;
+                align-items: start;
+                max-width: 1200px;
+            }
+            
+            /* 时间选择区域 */
+            .time-selection-area {
+                background: white;
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: var(--card-shadow);
+            }
+            
+            /* 时间格子 - PC端更大 */
+            .time-slots-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+            }
+            
+            /* 我的预订页面 */
+            .bookings-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+                gap: 20px;
+                padding: 24px;
+            }
+            
+            /* 顶部标题栏 */
+            .page-header {
+                padding: 24px 24px 0;
+            }
+            
+            .page-title {
+                font-size: 28px;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            /* Tab 筛选 */
+            .tab-filter {
+                padding: 16px 24px;
+            }
+            
+            /* 管理员页面 */
+            .admin-page {
+                padding: 24px;
+                max-width: 1200px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* 平板适配 */
+        @media (min-width: 481px) and (max-width: 768px) {
+            body {
+                display: flex;
+                justify-content: center;
+                background: #2C2417;
+            }
+            #app {
+                width: 100%;
+                max-width: 480px;
+                min-height: 100vh;
+                background: var(--bg-gray);
+                box-shadow: 0 0 50px rgba(139,105,20,0.3);
+            }
+        }
+
+        #app {
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        /* 登录页 */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #C9A96E 0%, #8B6914 50%, #5C4A1E 100%);
+            padding: 40px 24px;
+        }
+
+        .login-logo {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .login-logo svg {
+            width: 60px;
+            height: 60px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 60px;
+        }
+
+        .wechat-login-btn {
+            width: 100%;
+            max-width: 320px;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .wechat-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+        }
+
+        .wechat-login-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* 用户选择弹窗 */
+        .user-select-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .user-select-modal.show {
+            display: flex;
+        }
+
+        .user-select-content {
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .user-select-title {
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .user-option {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .user-option:hover {
+            background: var(--primary-light);
+        }
+
+        .user-option.normal:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .user-option.premium:hover {
+            border-color: var(--vip-gold);
+        }
+
+        .user-option.admin:hover {
+            border-color: var(--admin-red);
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 16px;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .user-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .user-badge.normal {
+            background: #E5E5EA;
+            color: var(--text-secondary);
+        }
+
+        .user-badge.premium {
+            background: var(--vip-gold-light);
+            color: var(--vip-gold);
+        }
+
+        .user-badge.admin {
+            background: #FFE5E5;
+            color: var(--admin-red);
+        }
+
+        .cancel-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            font-size: 16px;
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background: linear-gradient(90deg, #FAF5E8 0%, #F5ECD7 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(201,169,110,0.15);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-logo svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .header-user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .header-username {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .header-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .header-badge.normal {
+            background: #E5E5EA;
+            color: var(--text-secondary);
+        }
+
+        .header-badge.premium {
+            background: linear-gradient(135deg, #1A1A1A, #2D2520);
+            color: var(--vip-gold);
+            border: 1px solid var(--vip-gold);
+            font-weight: 600;
+        }
+
+        .header-badge.admin {
+            background: #FFE5E5;
+            color: var(--admin-red);
+        }
+
+        /* 权限提示条 */
+        .permission-banner {
+            background: linear-gradient(90deg, #1A1714 0%, #2A2218 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(212,175,55,0.3);
+        }
+
+        .permission-banner-text {
+            font-size: 13px;
+            color: var(--vip-gold);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .permission-banner-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Tab筛选 */
+        .tab-filter {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: var(--bg-gray);
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 会议室列表 */
+        .room-list {
+            padding: 16px;
+        }
+
+        .room-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .room-card.locked {
+            opacity: 0.5;
+        }
+
+        .room-card.vip {
+            border: 2px solid var(--vip-gold);
+            background: linear-gradient(145deg, #1A1A1A 0%, #2D2520 100%);
+            color: #F5ECD7;
+        }
+
+        .room-card.vip .room-name,
+        .room-card.vip .room-info,
+        .room-card.vip .room-capacity {
+            color: #F5ECD7;
+        }
+
+        .room-card.vip .room-capacity,
+        .room-card.vip .room-equipment,
+        .room-card.vip .room-location {
+            color: #C9A96E;
+        }
+
+        .room-card.vip.locked {
+            border-color: transparent;
+        }
+
+        .room-lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26,26,26,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .room-lock-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .room-name-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-name {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .room-vip-badge {
+            background: linear-gradient(135deg, #D4AF37, #F5D680, #D4AF37);
+            color: #1A1A1A;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .room-capacity {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .room-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .room-location {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .room-equipment {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .equipment-tag {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 12px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: linear-gradient(90deg, #FAF5E8, #F5ECD7);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .nav-text {
+            font-size: 11px;
+        }
+
+        /* 预订页面 */
+        .booking-page {
+            padding: 16px;
+        }
+
+        .booking-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .booking-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .date-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-item {
+            min-width: 60px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            background: var(--bg-gray);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .date-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .date-item-day {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .date-item-date {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .time-slot {
+            padding: 10px 4px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            min-height: 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .time-slot.available {
+            background: var(--primary-lighter);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .time-slot.available:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .time-slot.occupied {
+            background: #E8E8E8;
+            color: #999;
+            cursor: not-allowed;
+            border: 1px solid #DDD;
+        }
+
+        .time-slot.occupied .booker-name {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .time-slot.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .time-slot.selected:hover {
+            background: var(--primary-dark);
+        }
+
+        .time-slot-placeholder {
+            grid-column: span 4;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            min-height: 100px;
+            resize: vertical;
+            transition: all 0.2 ease;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-btn:disabled {
+            background: #CCC;
+            cursor: not-allowed;
+            color: #888;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        /* 我的预订 */
+        .my-bookings-page {
+            padding: 16px;
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .booking-card.vip {
+            border: 2px solid var(--vip-gold);
+            background: linear-gradient(145deg, #1A1714, #2D2520);
+            color: #F5ECD7;
+        }
+
+        .booking-card.vip .booking-info,
+        .booking-card.vip .booking-time {
+            color: #C9A96E;
+        }
+
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .booking-room {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .booking-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .booking-status.upcoming {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .booking-status.completed {
+            background: #E8F5E9;
+            color: var(--success);
+        }
+
+        .booking-status.cancelled {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .booking-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .booking-info-item {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .booking-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .booking-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .booking-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .booking-btn.danger {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .booking-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 15px;
+        }
+
+        /* 管理员页面 */
+        .admin-page {
+            padding: 16px;
+        }
+
+        .admin-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .admin-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 15px;
+            margin-left: 10px;
+            outline: none;
+        }
+
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+        }
+
+        .user-list-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+
+        .user-list-info {
+            flex: 1;
+        }
+
+        .user-list-name {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .user-list-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .role-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .role-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .role-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .role-btn.vip.active {
+            background: linear-gradient(135deg, #1A1A1A, #2D2520);
+            border-color: var(--vip-gold);
+            color: var(--vip-gold);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--bg-gray);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* 底部Sheet */
+        .bottom-sheet {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .bottom-sheet.show {
+            display: flex;
+        }
+
+        .bottom-sheet-content {
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .bottom-sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .bottom-sheet-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .bottom-sheet-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .vip-info {
+            text-align: center;
+            padding: 24px 0;
+            background: linear-gradient(145deg, #1A1A1A, #2D2520);
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+
+        .vip-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .vip-title {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #D4AF37, #F5D680);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .vip-desc {
+            font-size: 14px;
+            color: #C9A96E;
+            line-height: 1.6;
+        }
+
+        .vip-features {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .vip-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .vip-feature-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #1A1A1A, #2D2520);
+            border: 1px solid var(--vip-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--vip-gold);
+        }
+
+        /* 弹窗 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 360px;
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .modal-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .modal-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: var(--bg-gray);
+            color: var(--text-primary);
+        }
+
+        /* 确认弹窗特殊样式 */
+        .confirm-modal .modal-content {
+            max-width: 320px;
+        }
+
+        /* 页面切换动画 */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* 会议室选择 */
+        .room-select-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .room-select-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .room-select-toggle {
+            color: var(--primary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .room-select-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .room-selected-card {
+            background: linear-gradient(135deg, var(--primary-lighter), var(--primary-light));
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .room-selected-card.vip {
+            background: linear-gradient(145deg, #1A1A1A, #2D2520);
+            border-color: var(--vip-gold);
+            color: #F5ECD7;
+        }
+
+        .room-selected-card.vip .room-selected-name,
+        .room-selected-card.vip .room-selected-meta {
+            color: #F5ECD7;
+        }
+
+        .room-selected-card.vip .room-selected-equipment {
+            color: #C9A96E;
+        }
+
+        .room-selected-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .room-selected-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .room-selected-badge {
+            background: var(--vip-gold);
+            color: #1A1A1A;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .room-selected-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .room-selected-equipment {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .room-selected-equipment span {
+            background: rgba(201,169,110,0.2);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .room-selected-card.vip .room-selected-equipment span {
+            background: rgba(212,175,55,0.2);
+        }
+
+        .room-change-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .room-selected-card.vip .room-change-btn {
+            background: var(--vip-gold);
+            color: #1A1A1A;
+        }
+
+        .room-select-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .room-select-item {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .room-select-item:hover {
+            background: var(--primary-light);
+        }
+
+        .room-select-item.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .room-select-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .room-select-info {
+            flex: 1;
+        }
+
+        .room-select-name {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .room-select-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 日志列表 */
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 12px;
+            background: var(--bg-gray);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .log-content {
+            color: var(--text-primary);
+        }
+
+        .log-content .user {
+            font-weight: 500;
+        }
+
+        .log-content .action {
+            color: var(--primary);
+        }
+        /* Extra styles for DB-connected version */
+        .login-card { background:white; border-radius:20px; padding:32px 24px; width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+        .login-card .form-group { margin-bottom:16px; }
+        .login-card .form-group label { display:block; font-size:13px; color:var(--text-secondary); margin-bottom:6px; font-weight:500; }
+        .gender-group { display:flex; gap:16px; margin-top:4px; }
+        .gender-group label { display:flex; align-items:center; gap:4px; font-size:14px; cursor:pointer; }
+        .form-footer { text-align:center; margin-top:16px; font-size:13px; color:var(--text-secondary); }
+        .form-footer a { color:var(--primary); cursor:pointer; text-decoration:none; }
+        .admin-tabs { display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+        .admin-tab { padding:8px 16px; border-radius:8px; font-size:14px; cursor:pointer; background:transparent; border:none; color:var(--text-secondary); }
+        .admin-tab.active { background:var(--primary); color:white; }
+        .admin-tab-content { display:none; }
+        .admin-tab-content.active { display:block; }
+        .admin-table { width:100%; border-collapse:collapse; background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(201,169,110,0.15); }
+        .admin-table th,.admin-table td { padding:12px; text-align:left; border-bottom:1px solid var(--border); font-size:13px; }
+        .admin-table th { background:var(--primary-lighter); font-weight:600; color:var(--text-secondary); }
+        .role-select { padding:4px 8px; border:1px solid var(--border); border-radius:4px; font-size:12px; }
+        .status-badge { font-size:11px; padding:2px 8px; border-radius:4px; }
+        .status-badge.active { background:#E8F5E9; color:#2E7D32; }
+        .status-badge.inactive { background:#FFEBEE; color:#C62828; }
+        .vip-badge-small { background:linear-gradient(135deg,#FFD700,#FFA500); color:white; padding:1px 6px; border-radius:3px; font-size:10px; }
+        .room-edit-form .form-group { margin-bottom:12px; }
+        .room-edit-form .form-input { width:100%; }
+        .room-edit-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+        /* Calendar styles for app.js date picker */
+        .calendar-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+        .date-selector { display:block !important; overflow:visible !important; max-width:420px; }
+        .cal-nav-btn { width:36px; height:36px; border:1px solid var(--border); border-radius:50%; background:white; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+        .cal-nav-btn:hover { background:var(--primary-lighter); }
+        .cal-title { font-size:16px; font-weight:600; }
+        .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
+        .cal-wd { font-size:12px; color:var(--text-secondary); padding:4px 0; }
+        .cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+        .cal-day { text-align:center; padding:10px 0; font-size:15px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
+        .cal-day:hover { background:var(--primary-lighter); }
+        .cal-day.selected { background:var(--primary); color:white; }
+        .cal-day.today { border:1px solid var(--primary); }
+        .cal-day.disabled { color:#ddd; cursor:not-allowed; }
+        .cal-day.disabled:hover { background:transparent; }
+        .cal-day.other-month { color:#ccc; }
+        .cal-day.weekend { color:var(--text-secondary); }
+        /* Fix page switch - remove animation */
+        .page { display:none; }
+        .page.active { display:block; animation:none; }
+
+        /* ===== UX 优化 ===== */
+        /* 1. 登录页表单卡片输入框 */
+        .login-card .form-input {
+            width: 100%; padding: 14px 16px;
+            border: 1.5px solid var(--border); border-radius: 10px;
+            font-size: 16px; /* 防止iOS缩放 */
+            outline: none; transition: all 0.25s ease;
+            background: var(--bg-gray);
+        }
+        .login-card .form-input:focus {
+            border-color: var(--primary); background: white;
+            box-shadow: 0 0 0 3px rgba(201,169,110,0.15);
+        }
+        .login-card .form-input::placeholder { color: #bbb; }
+
+        /* 2. 按钮点击反馈 */
+        .login-card .wechat-login-btn:active,
+        .btn-primary:active,
+        .submit-btn:active {
+            transform: scale(0.97);
+            transition: transform 0.1s;
+        }
+
+        /* 3. 内容区底部留出导航栏空间 */
+        .page { padding-bottom: 72px; }
+
+        /* 4. 弹窗在移动端的体验 */
+        .modal-content {
+            margin: 16px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        /* 5. 时间槽在移动端的触摸区域 */
+        .time-slot {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .time-slot:active:not(.occupied):not(.past) {
+            transform: scale(0.93);
+        }
+
+        /* 6. Toast 优化 */
+        .toast-notification {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            max-width: 85vw;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* 7. 会议室卡片点击反馈 */
+        .room-card {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .room-card:active {
+            transform: scale(0.98);
+            transition: transform 0.1s;
+        }
+
+        /* 8. 日历优化 */
+        .cal-day {
+            -webkit-tap-highlight-color: transparent;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cal-day:active:not(.disabled):not(.other-month) {
+            background: var(--primary-light);
+        }
+
+        /* 9. 预订按钮 */
+        .submit-btn {
+            -webkit-tap-highlight-color: transparent;
+            position: sticky;
+            bottom: 70px;
+            z-index: 10;
+        }
+
+        /* 10. 底部导航优化 */
+        .bottom-nav .nav-item {
+            -webkit-tap-highlight-color: transparent;
+            padding: 6px 0;
+            min-width: 56px;
+        }
+        .bottom-nav .nav-item:active {
+            opacity: 0.6;
+        }
+        .bottom-nav .nav-item .nav-icon {
+            width: 22px; height: 22px;
+            transition: transform 0.2s;
+        }
+        .bottom-nav .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+
+        /* 11. PC侧边栏退出按钮 */
+        .pc-nav-footer .btn-logout,
+        .pc-nav-footer button[onclick*="handleLogout"] {
+            border-color: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.08);
+            transition: all 0.2s;
+        }
+        .pc-nav-footer .btn-logout:hover,
+        .pc-nav-footer button[onclick*="handleLogout"]:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        /* 12. loading spinner for async actions */
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* 13. 平滑滚动 */
+        html { scroll-behavior: smooth; }
+        .main-content-wrapper { -webkit-overflow-scrolling: touch; }
+
+        /* 14. 安全区域 */
+        .bottom-nav { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+        .login-page { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+
+        /* 15. form-textarea 高度 */
+        .form-textarea {
+            min-height: 80px; resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 登录页 -->
+        <div id="loginPage" class="login-page">
+            <div class="login-logo">
+                <img src="img/aia-logo-new.jpg" alt="AIA" style="width:100px;height:100px;border-radius:20px;object-fit:cover;">
+            </div>
+            <h1 class="login-title">财富管理 · 会议室预定</h1>
+            <p class="login-subtitle">高效便捷的会议室管理解决方案</p>
+            <div class="login-card">
+                <div id="loginForm">
+                    <div class="form-group"><label>手机号</label><input type="tel" id="loginPhone" class="form-input" placeholder="请输入手机号" maxlength="11"></div>
+                    <div class="form-group"><label>密码</label><input type="password" id="loginPassword" class="form-input" placeholder="请输入密码"></div>
+                    <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleLogin()">登 录</button>
+                    <button class="wechat-login-btn" onclick="app.startWxLogin()" style="margin-top:12px;">
+                        <svg viewBox="0 0 24 24" fill="#07C160"><path d="M8.5 14.5c-3.5 0-6.5-2.5-6.5-5.5S5 3.5 8.5 3.5s6.5 2.5 6.5 5.5-3 5.5-6.5 5.5zm0-9c-2.5 0-4.5 1.8-4.5 4s2 4 4.5 4 4.5-1.8 4.5-4-2-4-4.5-4zm7.5 9c-.3 0-.5 0-.8-.1.3.5.5 1.1.5 1.6 0 2.8-3 5-6.5 5-.6 0-1.2-.1-1.8-.2.8 2.2 3.3 3.7 6.3 3.7 1.1 0 2.1-.2 3-.6l2.5 1.4-.7-2.4c1.3-1.1 2.2-2.6 2.2-4.3 0-3.3-3.4-6-7.5-6-.4 0-.8 0-1.2.1 1.5 1.1 2.5 2.7 2.7 4.5.4-.1.8-.2 1.2-.2 3.5 0 6.5 2.2 6.5 5s-3 5-6.5 5z"/></svg>
+                        微信登录
+                    </button>
+                    <div class="form-footer">还没有账号？<a onclick="app.showRegisterForm()">立即注册</a></div>
+                </div>
+                <div id="registerForm" style="display:none;">
+                    <div class="form-group"><label>姓名</label><input type="text" id="regName" class="form-input" placeholder="请输入姓名"></div>
+                    <div class="form-group"><label>手机号</label><input type="tel" id="regPhone" class="form-input" placeholder="请输入手机号" maxlength="11"></div>
+                    <div class="form-group"><label>密码</label><input type="password" id="regPassword" class="form-input" placeholder="至少6位密码"></div>
+                    <div class="form-group"><label>性别</label><div class="gender-group"><label><input type="radio" name="gender" value="male"> 男</label><label><input type="radio" name="gender" value="female"> 女</label></div></div>
+                    <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleRegister()">注 册</button>
+                    <div class="form-footer">已有账号？<a onclick="app.showLoginForm()">返回登录</a></div>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- 主应用 -->
+        <div id="mainApp" style="display: none;">
+            <!-- PC端侧边导航 -->
+            <nav class="pc-sidebar-nav" id="pcSidebarNav" style="display: none;">
+                <div class="pc-nav-header"><div class="header-logo"><img src="img/aia-logo-new.jpg" alt="AIA" style="width:32px;height:32px;border-radius:8px;object-fit:cover;"></div>
+                    <span class="pc-nav-title">会议室预订</span>
+                </div>
+                <div class="pc-nav-items">
+                    <div class="pc-nav-item active" onclick="app.switchTab('rooms')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="M8 9H16M8 13H13M8 17H11"/>
+                        </svg>
+                        <span>会议室</span>
+                    </div>
+                    <div class="pc-nav-item" onclick="app.switchTab('booking')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
+                        <span>预订</span>
+                    </div>
+                    <div class="pc-nav-item" onclick="app.switchTab('myBookings')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span>我的预订</span>
+                    </div>
+                    <div class="pc-nav-item" id="pcAdminNavItem" style="display: none;" onclick="app.switchTab('admin')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <span>管理</span>
+                    </div>
+                </div>
+                <div class="pc-nav-footer">
+                    <div class="header-avatar" id="pcUserAvatar">张</div>
+                    <div class="pc-user-info">
+                        <span id="pcUserName">张三</span>
+                        <span class="pc-user-badge" id="pcUserBadge">👑 银色</span>
+                    </div>
+                    <button onclick="app.handleLogout()" style="margin-left:8px;padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;color:#666;cursor:pointer;">退出</button>
+                </div>
+            </nav>
+            
+            <!-- 主内容区 -->
+            <div class="main-content-wrapper">
+                <!-- 顶部导航 -->
+                <header class="header">
+                <div class="header-left">
+                    <div class="header-logo"><img src="img/aia-logo-new.jpg" alt="AIA" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"></div>
+                    <span class="header-title" id="pageTitle">会议室预定</span>
+                </div>
+                <div class="header-user">
+                    <div class="header-avatar" id="userAvatar">张</div>
+                    <div class="header-user-info">
+                        <span class="header-username" id="userName">张三</span>
+                        <span class="header-badge normal" id="userBadge">👑 银色</span>
+                    </div>
+                    <button onclick="app.handleLogout()" style="margin-left:8px;padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;color:#666;cursor:pointer;">退出</button>
+                </div>
+            </header>
+
+            <!-- 权限提示条 -->
+            <div id="permissionBanner" class="permission-banner" style="display: none;">
+                <div class="permission-banner-text">
+                    <span>👑</span>
+                    <span>您当前可预订7间会议室，升级解锁剩余3间高级会议室</span>
+                </div>
+                <button class="permission-banner-close" onclick="app.closePermissionBanner()">✕</button>
+            </div>
+
+            <!-- 会议室列表页 -->
+            <div id="roomsPage" class="page active">
+                <div class="page-header">
+                    <h1 class="page-title">会议室预订</h1>
+                </div>
+                <div class="tab-filter">
+                    <button class="tab-btn active" onclick="app.filterRooms('all')">全部会议室</button>
+                    <button class="tab-btn" onclick="app.filterRooms('available')">可预订</button>
+                </div>
+                <div class="rooms-grid room-list" id="roomList"></div>
+            </div>
+
+            <!-- 预订页 -->
+            <div id="bookingPage" class="page">
+                <div class="booking-layout booking-page">
+                    <div class="booking-section">
+                        <div class="booking-section-title">
+                            <span>📅</span> 选择会议室
+                        </div>
+                        <div class="room-select-container" id="roomSelectContainer"><div id="roomSelectList"></div>
+                            <!-- 动态渲染会议室选择区域 -->
+                        </div>
+                    </div>
+
+                    <div class="booking-section">
+                        <div class="booking-section-title">
+                            <span>📆</span> 选择日期
+                        </div>
+                        <div class="date-selector" id="dateSelector"></div>
+                    </div>
+
+                    <div class="booking-section time-selection-area">
+                        <div class="booking-section-title">
+                            <span>⏰</span> 选择时间段
+                        </div>
+                        <div class="time-slots-grid time-grid" id="timeGrid"></div>
+                    </div>
+
+                    <div class="booking-section">
+                        <div class="booking-section-title">
+                            <span>📝</span> 预订信息
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">会议主题 *</label>
+                            <input type="text" class="form-input" id="bookingTitle" placeholder="请输入会议主题">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">参与人</label>
+                            <textarea class="form-textarea" id="bookingAttendees" placeholder="请输入参与人姓名，用逗号分隔"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="submit-btn" id="submitBookingBtn" onclick="app.submitBooking()" disabled>确认预订</button>
+                </div>
+            </div>
+
+            <!-- 我的预订页 -->
+            <div id="myBookingsPage" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">我的预订</h1>
+                </div>
+                <div class="bookings-list my-bookings-page" id="myBookingsList"></div>
+            </div>
+
+            <!-- 管理员页 -->
+            <div id="adminPage" class="page">
+                <div class="admin-page">
+                    <div class="admin-section">
+                        <div class="admin-section-title">📊 数据统计</div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="statTotalRooms">10</div>
+                                <div class="stat-label">会议室总数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statTotalBookings">0</div>
+                                <div class="stat-label">今日预订</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statTotalUsers">3</div>
+                                <div class="stat-label">系统用户</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statVipUsers">1</div>
+                                <div class="stat-label">高级用户</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <div class="admin-tabs">
+                            <button class="admin-tab active" data-tab="rooms" onclick="app.switchAdminTab('rooms')">会议室管理</button>
+                            <button class="admin-tab" data-tab="users" onclick="app.switchAdminTab('users')">用户管理</button>
+                            <button class="admin-tab" data-tab="reports" onclick="app.switchAdminTab('reports')">数据报表</button>
+                        </div>
+                        <div id="adminTab-rooms" class="admin-tab-content active">
+                            <div style="text-align:right;margin-bottom:12px;"><button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.showRoomEditModal()">+ 新建会议室</button></div>
+                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>名称</th><th>容量</th><th>楼层</th><th>位置</th><th>设备</th><th>VIP</th><th>状态</th><th>操作</th></tr></thead><tbody id="adminRoomTableBody"></tbody></table></div>
+                        </div>
+                        <div id="adminTab-users" class="admin-tab-content">
+                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>手机</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
+                        </div>
+                        <div id="adminTab-reports" class="admin-tab-content">
+                            <div id="reportPeriod" style="margin-bottom:16px;"></div>
+                            <canvas id="roomUsageChart" height="200"></canvas>
+                            <canvas id="userUsageChart" height="200" style="margin-top:16px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部导航 -->
+            <nav class="bottom-nav" id="bottomNav">
+                <div class="nav-item active" onclick="app.switchTab('rooms')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="16" rx="2"/>
+                        <path d="M8 9H16M8 13H13M8 17H11"/>
+                    </svg>
+                    <span class="nav-text">会议室</span>
+                </div>
+                <div class="nav-item" onclick="app.switchTab('booking')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="16" rx="2"/>
+                        <path d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
+                    <span class="nav-text">预订</span>
+                </div>
+                <div class="nav-item" onclick="app.switchTab('myBookings')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span class="nav-text">我的</span>
+                </div>
+                <div class="nav-item" id="adminNavItem" style="display: none;" onclick="app.switchTab('admin')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="nav-text">管理</span>
+                </div>
+            </nav>
+            </div><!-- /main-content-wrapper -->
+        </div>
+
+        <!-- VIP升级提示Sheet -->
+        <div id="vipSheet" class="bottom-sheet" onclick="app.hideVipSheet(event)">
+            <div class="bottom-sheet-content" onclick="event.stopPropagation()">
+                <div class="bottom-sheet-header">
+                    <span class="bottom-sheet-title">高级会议室</span>
+                    <button class="bottom-sheet-close" onclick="app.hideVipSheet()">✕</button>
+                </div>
+                <div class="vip-info">
+                    <div class="vip-icon">👑</div>
+                    <div class="vip-title">VIP会议室专属权限</div>
+                    <div class="vip-desc">此会议室为高级员工专属，配备顶级设施</div>
+                </div>
+                <div class="vip-features">
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>4K超高清投影设备</span>
+                    </div>
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>专业视频会议系统</span>
+                    </div>
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>智能电子白板</span>
+                    </div>
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>全景落地窗视野</span>
+                    </div>
+                </div>
+                <button class="submit-btn" onclick="app.applyForUpgrade()">申请升级权限</button>
+            </div>
+        </div>
+
+        <!-- 成功弹窗 -->
+        <div id="successModal" class="modal" onclick="app.hideSuccessModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon">🎉</div>
+                <div class="modal-title">预订成功！</div>
+                <div class="modal-message">您的会议室预订已成功提交</div>
+                <button class="modal-btn primary" onclick="app.hideSuccessModal()">确定</button>
+            </div>
+        </div>
+
+        <!-- 错误弹窗 -->
+        <div id="errorModal" class="modal" onclick="app.hideErrorModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon">⚠️</div>
+                <div class="modal-title" id="errorTitle">预订失败</div>
+                <div class="modal-message" id="errorMessage">请检查您的预订信息</div>
+                <button class="modal-btn primary" onclick="app.hideErrorModal()">确定</button>
+            </div>
+        </div>
+
+        <!-- 确认取消弹窗 -->
+        <div id="confirmCancelModal" class="modal confirm-modal" onclick="app.hideConfirmCancelModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon">❓</div>
+                <div class="modal-title">确认取消预订</div>
+                <div class="modal-message">确定要取消这个会议室预订吗？此操作不可撤销。</div>
+                <div class="modal-buttons">
+                    <button class="modal-btn secondary" onclick="app.hideConfirmCancelModal()">再想想</button>
+                    <button class="modal-btn primary" onclick="app.confirmCancelBooking()" style="background: var(--danger);">确认取消</button>
+                </div>
+
+        <!-- 微信登录弹窗 -->
+        <div id="wechatLoginModal" class="modal" onclick="app.hideWechatLogin(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon" style="font-size:40px;">💬</div>
+                <div class="modal-title">微信登录</div>
+                <div class="modal-message">即将跳转到微信授权页面</div>
+                <button class="wechat-login-btn" style="width:100%;justify-content:center;border-radius:8px;" onclick="app.startWxLogin()">确认微信登录</button>
+            </div>
+        </div>
+
+        <!-- 会议室编辑弹窗 -->
+        
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>document.addEventListener('DOMContentLoaded',()=>app.init());</script>
+<div id="roomEditModal" class="modal" onclick="event.target===this&&(app.closeRoomEditModal())">
+            <div class="modal-content" onclick="event.stopPropagation()" style="max-width:480px;text-align:left;">
+                <div class="modal-title" id="roomEditTitle">新建会议室</div>
+                <input type="hidden" id="roomEditId">
+                <div class="room-edit-form">
+                    <div class="form-group"><label>名称</label><input type="text" id="roomEditName" class="form-input"></div>
+                    <div class="form-group"><label>容量</label><input type="number" id="roomEditCapacity" class="form-input" value="10"></div>
+                    <div class="form-group"><label>楼层</label><input type="text" id="roomEditFloor" class="form-input"></div>
+                    <div class="form-group"><label>位置</label><input type="text" id="roomEditLocation" class="form-input"></div>
+                    <div class="form-group"><label>设备（逗号分隔）</label><input type="text" id="roomEditEquipment" class="form-input"></div>
+                    <div class="form-group"><label>描述</label><input type="text" id="roomEditDescription" class="form-input"></div>
+                    <div class="form-group"><label><input type="checkbox" id="roomEditIsVip"> VIP会议室</label></div>
+                    <div class="form-group"><label><input type="checkbox" id="roomEditIsActive" checked> 启用</label></div>
+                    <div class="room-edit-actions">
+                        <button style="padding:10px 24px;background:#f5f5f5;border:none;border-radius:8px;cursor:pointer;" onclick="app.closeRoomEditModal()">取消</button>
+                        <button style="padding:10px 24px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;" onclick="app.handleRoomSubmit()">保存</button>
+                    </div>
+                </div>
+            </div>
+</body>
+</html>

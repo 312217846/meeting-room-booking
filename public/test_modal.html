@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="document.getElementById('testModal').classList.add('show')">Show Modal</button>
+<div id="testModal" class="modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:white;padding:40px;border-radius:12px;">Modal works!</div>
+</div>
+<style>.modal.show{display:flex!important;}</style>
+</body>
+</html>

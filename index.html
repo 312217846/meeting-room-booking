@@ -1,0 +1,2772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>财富管理 · 会议室预定系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #C9A96E;
+            --primary-dark: #A88B4A;
+            --primary-light: #F5ECD7;
+            --primary-lighter: #FAF5E8;
+            --vip-gold: #D4AF37;
+            --vip-gold-light: #2A2218;
+            --vip-black: #1A1A1A;
+            --vip-black-light: #2D2D2D;
+            --admin-red: #C0392B;
+            --bg-gray: #FAF7F0;
+            --bg-dark: #1A1714;
+            --text-primary: #2C2417;
+            --text-secondary: #8E7E6A;
+            --border: #E8DFD0;
+            --success: #4A9D5B;
+            --danger: #C0392B;
+            --warning: #D4AF37;
+            --card-shadow: 0 2px 12px rgba(201,169,110,0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* PC端适配 - 宽屏布局 */
+        @media (min-width: 769px) {
+            body {
+                background: var(--bg-gray);
+            }
+            #app {
+                max-width: none;
+                margin: 0;
+                padding-bottom: 0;
+            }
+            
+            /* 显示PC端侧边导航 */
+            .pc-sidebar-nav {
+                display: flex !important;
+                flex-direction: column;
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 240px;
+                height: 100vh;
+                background: white;
+                border-right: 1px solid var(--border);
+                z-index: 100;
+                padding: 24px 16px;
+            }
+            
+            .pc-nav-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding-bottom: 24px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 16px;
+            }
+            
+            .pc-nav-header .header-logo {
+                width: 40px;
+                height: 40px;
+                background: var(--primary);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .pc-nav-header .header-logo svg {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .pc-nav-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            .pc-nav-items {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .pc-nav-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+                border-radius: 12px;
+                cursor: pointer;
+                transition: all 0.2s;
+                color: var(--text-secondary);
+            }
+            
+            .pc-nav-item:hover {
+                background: var(--bg-gray);
+                color: var(--text-primary);
+            }
+            
+            .pc-nav-item.active {
+                background: var(--primary-light);
+                color: var(--primary-dark);
+            }
+            
+            .pc-nav-item .nav-icon {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .pc-nav-item span {
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .pc-nav-footer {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border);
+            }
+            
+            .pc-user-info {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+            
+            .pc-user-info span:first-child {
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--text-primary);
+            }
+            
+            .pc-user-badge {
+                font-size: 12px;
+                color: var(--primary);
+            }
+            
+            /* 主内容区 */
+            .main-content-wrapper {
+                margin-left: 240px;
+                min-height: 100vh;
+            }
+            
+            /* 隐藏移动端底部导航 */
+            .bottom-nav {
+                display: none !important;
+            }
+            
+            /* 隐藏移动端顶部header */
+            .header {
+                display: none;
+            }
+            
+            /* 首页会议室网格 - PC端多列 */
+            .rooms-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+                padding: 24px;
+            }
+            
+            /* 会议室卡片 */
+            .room-card {
+                margin: 0;
+            }
+            
+            /* 预订页面布局 */
+            .booking-layout {
+                display: grid;
+                grid-template-columns: 360px 1fr;
+                gap: 24px;
+                padding: 24px;
+                align-items: start;
+                max-width: 1200px;
+            }
+            
+            /* 时间选择区域 */
+            .time-selection-area {
+                background: white;
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: var(--card-shadow);
+            }
+            
+            /* 时间格子 - PC端更大 */
+            .time-slots-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+            }
+            
+            /* 我的预订页面 */
+            .bookings-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+                gap: 20px;
+                padding: 24px;
+            }
+            
+            /* 顶部标题栏 */
+            .page-header {
+                padding: 24px 24px 0;
+            }
+            
+            .page-title {
+                font-size: 28px;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            
+            /* Tab 筛选 */
+            .tab-filter {
+                padding: 16px 24px;
+            }
+            
+            /* 管理员页面 */
+            .admin-page {
+                padding: 24px;
+                max-width: 1200px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* 平板适配 */
+        @media (min-width: 481px) and (max-width: 768px) {
+            body {
+                display: flex;
+                justify-content: center;
+                background: #2C2417;
+            }
+            #app {
+                width: 100%;
+                max-width: 480px;
+                min-height: 100vh;
+                background: var(--bg-gray);
+                box-shadow: 0 0 50px rgba(139,105,20,0.3);
+            }
+        }
+
+        #app {
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        /* 登录页 */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #C9A96E 0%, #8B6914 50%, #5C4A1E 100%);
+            padding: 40px 24px;
+        }
+
+        .login-logo {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .login-logo svg {
+            width: 60px;
+            height: 60px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 60px;
+        }
+
+        .wechat-login-btn {
+            width: 100%;
+            max-width: 320px;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .wechat-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+        }
+
+        .wechat-login-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* 用户选择弹窗 */
+        .user-select-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .user-select-modal.show {
+            display: flex;
+        }
+
+        .user-select-content {
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .user-select-title {
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .user-option {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .user-option:hover {
+            background: var(--primary-light);
+        }
+
+        .user-option.normal:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .user-option.premium:hover {
+            border-color: var(--vip-gold);
+        }
+
+        .user-option.admin:hover {
+            border-color: var(--admin-red);
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 16px;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .user-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .user-badge.normal {
+            background: #E5E5EA;
+            color: var(--text-secondary);
+        }
+
+        .user-badge.premium {
+            background: var(--vip-gold-light);
+            color: var(--vip-gold);
+        }
+
+        .user-badge.admin {
+            background: #FFE5E5;
+            color: var(--admin-red);
+        }
+
+        .cancel-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            font-size: 16px;
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background: linear-gradient(90deg, #FAF5E8 0%, #F5ECD7 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(201,169,110,0.15);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-logo svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .header-user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .header-username {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .header-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .header-badge.normal {
+            background: #E5E5EA;
+            color: var(--text-secondary);
+        }
+
+        .header-badge.premium {
+            background: linear-gradient(135deg, #1A1A1A, #2D2520);
+            color: var(--vip-gold);
+            border: 1px solid var(--vip-gold);
+            font-weight: 600;
+        }
+
+        .header-badge.admin {
+            background: #FFE5E5;
+            color: var(--admin-red);
+        }
+
+        /* 权限提示条 */
+        .permission-banner {
+            background: linear-gradient(90deg, #1A1714 0%, #2A2218 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(212,175,55,0.3);
+        }
+
+        .permission-banner-text {
+            font-size: 13px;
+            color: var(--vip-gold);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .permission-banner-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Tab筛选 */
+        .tab-filter {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: var(--bg-gray);
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 会议室列表 */
+        .room-list {
+            padding: 16px;
+        }
+
+        .room-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .room-card.locked {
+            opacity: 0.5;
+        }
+
+        .room-card.vip {
+            border: 2px solid var(--vip-gold);
+            background: linear-gradient(145deg, #1A1A1A 0%, #2D2520 100%);
+            color: #F5ECD7;
+        }
+
+        .room-card.vip .room-name,
+        .room-card.vip .room-info,
+        .room-card.vip .room-capacity {
+            color: #F5ECD7;
+        }
+
+        .room-card.vip .room-capacity,
+        .room-card.vip .room-equipment,
+        .room-card.vip .room-location {
+            color: #C9A96E;
+        }
+
+        .room-card.vip.locked {
+            border-color: transparent;
+        }
+
+        .room-lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26,26,26,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .room-lock-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .room-name-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-name {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .room-vip-badge {
+            background: linear-gradient(135deg, #D4AF37, #F5D680, #D4AF37);
+            color: #1A1A1A;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .room-capacity {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .room-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .room-location {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .room-equipment {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .equipment-tag {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 12px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: linear-gradient(90deg, #FAF5E8, #F5ECD7);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .nav-text {
+            font-size: 11px;
+        }
+
+        /* 预订页面 */
+        .booking-page {
+            padding: 16px;
+        }
+
+        .booking-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .booking-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .date-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-item {
+            min-width: 60px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            background: var(--bg-gray);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .date-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .date-item-day {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .date-item-date {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .time-slot {
+            padding: 10px 4px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            min-height: 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .time-slot.available {
+            background: var(--primary-lighter);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .time-slot.available:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .time-slot.occupied {
+            background: #E8E8E8;
+            color: #999;
+            cursor: not-allowed;
+            border: 1px solid #DDD;
+        }
+
+        .time-slot.occupied .booker-name {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .time-slot.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .time-slot.selected:hover {
+            background: var(--primary-dark);
+        }
+
+        .time-slot-placeholder {
+            grid-column: span 4;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            min-height: 100px;
+            resize: vertical;
+            transition: all 0.2 ease;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-btn:disabled {
+            background: #CCC;
+            cursor: not-allowed;
+            color: #888;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        /* 我的预订 */
+        .my-bookings-page {
+            padding: 16px;
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .booking-card.vip {
+            border: 2px solid var(--vip-gold);
+            background: linear-gradient(145deg, #1A1714, #2D2520);
+            color: #F5ECD7;
+        }
+
+        .booking-card.vip .booking-info,
+        .booking-card.vip .booking-time {
+            color: #C9A96E;
+        }
+
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .booking-room {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .booking-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .booking-status.upcoming {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .booking-status.completed {
+            background: #E8F5E9;
+            color: var(--success);
+        }
+
+        .booking-status.cancelled {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .booking-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .booking-info-item {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .booking-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .booking-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .booking-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .booking-btn.danger {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .booking-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 15px;
+        }
+
+        /* 管理员页面 */
+        .admin-page {
+            padding: 16px;
+        }
+
+        .admin-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .admin-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 15px;
+            margin-left: 10px;
+            outline: none;
+        }
+
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+        }
+
+        .user-list-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+
+        .user-list-info {
+            flex: 1;
+        }
+
+        .user-list-name {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .user-list-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .role-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .role-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .role-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .role-btn.vip.active {
+            background: linear-gradient(135deg, #1A1A1A, #2D2520);
+            border-color: var(--vip-gold);
+            color: var(--vip-gold);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--bg-gray);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* 底部Sheet */
+        .bottom-sheet {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .bottom-sheet.show {
+            display: flex;
+        }
+
+        .bottom-sheet-content {
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .bottom-sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .bottom-sheet-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .bottom-sheet-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .vip-info {
+            text-align: center;
+            padding: 24px 0;
+            background: linear-gradient(145deg, #1A1A1A, #2D2520);
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+
+        .vip-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .vip-title {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #D4AF37, #F5D680);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .vip-desc {
+            font-size: 14px;
+            color: #C9A96E;
+            line-height: 1.6;
+        }
+
+        .vip-features {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .vip-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .vip-feature-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #1A1A1A, #2D2520);
+            border: 1px solid var(--vip-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--vip-gold);
+        }
+
+        /* 弹窗 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 360px;
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .modal-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .modal-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: var(--bg-gray);
+            color: var(--text-primary);
+        }
+
+        /* 确认弹窗特殊样式 */
+        .confirm-modal .modal-content {
+            max-width: 320px;
+        }
+
+        /* 页面切换动画 */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* 会议室选择 */
+        .room-select-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .room-select-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .room-select-toggle {
+            color: var(--primary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .room-select-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .room-selected-card {
+            background: linear-gradient(135deg, var(--primary-lighter), var(--primary-light));
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .room-selected-card.vip {
+            background: linear-gradient(145deg, #1A1A1A, #2D2520);
+            border-color: var(--vip-gold);
+            color: #F5ECD7;
+        }
+
+        .room-selected-card.vip .room-selected-name,
+        .room-selected-card.vip .room-selected-meta {
+            color: #F5ECD7;
+        }
+
+        .room-selected-card.vip .room-selected-equipment {
+            color: #C9A96E;
+        }
+
+        .room-selected-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .room-selected-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .room-selected-badge {
+            background: var(--vip-gold);
+            color: #1A1A1A;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .room-selected-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .room-selected-equipment {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .room-selected-equipment span {
+            background: rgba(201,169,110,0.2);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .room-selected-card.vip .room-selected-equipment span {
+            background: rgba(212,175,55,0.2);
+        }
+
+        .room-change-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .room-selected-card.vip .room-change-btn {
+            background: var(--vip-gold);
+            color: #1A1A1A;
+        }
+
+        .room-select-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .room-select-item {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .room-select-item:hover {
+            background: var(--primary-light);
+        }
+
+        .room-select-item.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .room-select-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .room-select-info {
+            flex: 1;
+        }
+
+        .room-select-name {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .room-select-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 日志列表 */
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 12px;
+            background: var(--bg-gray);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .log-content {
+            color: var(--text-primary);
+        }
+
+        .log-content .user {
+            font-weight: 500;
+        }
+
+        .log-content .action {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 登录页 -->
+        <div id="loginPage" class="login-page">
+            <div class="login-logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="4" width="18" height="16" rx="2" fill="#C9A96E"/>
+                    <path d="M8 9H16M8 13H13M8 17H11" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h1 class="login-title">财富管理 · 会议室预定</h1>
+            <p class="login-subtitle">高效便捷的会议室管理解决方案</p>
+            <button class="wechat-login-btn" onclick="app.showUserSelect()">
+                <svg viewBox="0 0 24 24" fill="#07C160">
+                    <path d="M8.5 14.5c-3.5 0-6.5-2.5-6.5-5.5S5 3.5 8.5 3.5s6.5 2.5 6.5 5.5-3 5.5-6.5 5.5zm0-9c-2.5 0-4.5 1.8-4.5 4s2 4 4.5 4 4.5-1.8 4.5-4-2-4-4.5-4zm7.5 9c-.3 0-.5 0-.8-.1.3.5.5 1.1.5 1.6 0 2.8-3 5-6.5 5-.6 0-1.2-.1-1.8-.2.8 2.2 3.3 3.7 6.3 3.7 1.1 0 2.1-.2 3-.6l2.5 1.4-.7-2.4c1.3-1.1 2.2-2.6 2.2-4.3 0-3.3-3.4-6-7.5-6-.4 0-.8 0-1.2.1 1.5 1.1 2.5 2.7 2.7 4.5.4-.1.8-.2 1.2-.2 3.5 0 6.5 2.2 6.5 5s-3 5-6.5 5z"/>
+                </svg>
+                使用企业微信登录
+            </button>
+        </div>
+
+        <!-- 用户选择弹窗 -->
+        <div id="userSelectModal" class="user-select-modal" onclick="app.hideUserSelect(event)">
+            <div class="user-select-content" onclick="event.stopPropagation()">
+                <div class="user-select-title">选择登录用户</div>
+                <div class="user-option normal" onclick="app.login('zhangsan')">
+                    <div class="user-avatar">张</div>
+                    <div class="user-info">
+                        <div class="user-name">张三</div>
+                        <div class="user-role">普通员工</div>
+                    </div>
+                    <span class="user-badge normal">👑 银色</span>
+                </div>
+                <div class="user-option premium" onclick="app.login('lisi')">
+                    <div class="user-avatar">李</div>
+                    <div class="user-info">
+                        <div class="user-name">李四</div>
+                        <div class="user-role">高级员工</div>
+                    </div>
+                    <span class="user-badge premium">👑 金色</span>
+                </div>
+                <div class="user-option admin" onclick="app.login('wangwu')">
+                    <div class="user-avatar">王</div>
+                    <div class="user-info">
+                        <div class="user-name">王五</div>
+                        <div class="user-role">系统管理员</div>
+                    </div>
+                    <span class="user-badge admin">ADMIN</span>
+                </div>
+                <button class="cancel-btn" onclick="app.hideUserSelect()">取消</button>
+            </div>
+        </div>
+
+        <!-- 主应用 -->
+        <div id="mainApp" style="display: none;">
+            <!-- PC端侧边导航 -->
+            <nav class="pc-sidebar-nav" id="pcSidebarNav" style="display: none;">
+                <div class="pc-nav-header">
+                    <div class="header-logo">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="4" width="18" height="16" rx="2" fill="white"/>
+                            <path d="M8 9H16M8 13H13M8 17H11" stroke="#C9A96E" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <span class="pc-nav-title">会议室预订</span>
+                </div>
+                <div class="pc-nav-items">
+                    <div class="pc-nav-item active" onclick="app.switchTab('rooms')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="M8 9H16M8 13H13M8 17H11"/>
+                        </svg>
+                        <span>会议室</span>
+                    </div>
+                    <div class="pc-nav-item" onclick="app.switchTab('booking')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
+                        <span>预订</span>
+                    </div>
+                    <div class="pc-nav-item" onclick="app.switchTab('myBookings')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span>我的预订</span>
+                    </div>
+                    <div class="pc-nav-item" id="pcAdminNavItem" style="display: none;" onclick="app.switchTab('admin')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <span>管理</span>
+                    </div>
+                </div>
+                <div class="pc-nav-footer">
+                    <div class="header-avatar" id="pcUserAvatar">张</div>
+                    <div class="pc-user-info">
+                        <span id="pcUserName">张三</span>
+                        <span class="pc-user-badge" id="pcUserBadge">👑 银色</span>
+                    </div>
+                    <button onclick="app.logout()" style="margin-left:8px;padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;color:#666;cursor:pointer;">退出</button>
+                </div>
+            </nav>
+            
+            <!-- 主内容区 -->
+            <div class="main-content-wrapper">
+                <!-- 顶部导航 -->
+                <header class="header">
+                <div class="header-left">
+                    <div class="header-logo">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="4" width="18" height="16" rx="2" fill="white"/>
+                            <path d="M8 9H16M8 13H13M8 17H11" stroke="#C9A96E" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <span class="header-title" id="pageTitle">会议室预定</span>
+                </div>
+                <div class="header-user">
+                    <div class="header-avatar" id="userAvatar">张</div>
+                    <div class="header-user-info">
+                        <span class="header-username" id="userName">张三</span>
+                        <span class="header-badge normal" id="userBadge">👑 银色</span>
+                    </div>
+                    <button onclick="app.logout()" style="margin-left:8px;padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;color:#666;cursor:pointer;">退出</button>
+                </div>
+            </header>
+
+            <!-- 权限提示条 -->
+            <div id="permissionBanner" class="permission-banner" style="display: none;">
+                <div class="permission-banner-text">
+                    <span>👑</span>
+                    <span>您当前可预订7间会议室，升级解锁剩余3间高级会议室</span>
+                </div>
+                <button class="permission-banner-close" onclick="app.closePermissionBanner()">✕</button>
+            </div>
+
+            <!-- 会议室列表页 -->
+            <div id="roomsPage" class="page active">
+                <div class="page-header">
+                    <h1 class="page-title">会议室预订</h1>
+                </div>
+                <div class="tab-filter">
+                    <button class="tab-btn active" onclick="app.filterRooms('all')">全部会议室</button>
+                    <button class="tab-btn" onclick="app.filterRooms('available')">可预订</button>
+                </div>
+                <div class="rooms-grid room-list" id="roomList"></div>
+            </div>
+
+            <!-- 预订页 -->
+            <div id="bookingPage" class="page">
+                <div class="booking-layout booking-page">
+                    <div class="booking-section">
+                        <div class="booking-section-title">
+                            <span>📅</span> 选择会议室
+                        </div>
+                        <div class="room-select-container" id="roomSelectContainer">
+                            <!-- 动态渲染会议室选择区域 -->
+                        </div>
+                    </div>
+
+                    <div class="booking-section">
+                        <div class="booking-section-title">
+                            <span>📆</span> 选择日期
+                        </div>
+                        <div class="date-selector" id="dateSelector"></div>
+                    </div>
+
+                    <div class="booking-section time-selection-area">
+                        <div class="booking-section-title">
+                            <span>⏰</span> 选择时间段
+                        </div>
+                        <div class="time-slots-grid time-grid" id="timeGrid"></div>
+                    </div>
+
+                    <div class="booking-section">
+                        <div class="booking-section-title">
+                            <span>📝</span> 预订信息
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">会议主题 *</label>
+                            <input type="text" class="form-input" id="bookingTitle" placeholder="请输入会议主题">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">参与人</label>
+                            <textarea class="form-textarea" id="bookingAttendees" placeholder="请输入参与人姓名，用逗号分隔"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="submit-btn" id="submitBookingBtn" onclick="app.submitBooking()" disabled>确认预订</button>
+                </div>
+            </div>
+
+            <!-- 我的预订页 -->
+            <div id="myBookingsPage" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">我的预订</h1>
+                </div>
+                <div class="bookings-list my-bookings-page" id="myBookingsList"></div>
+            </div>
+
+            <!-- 管理员页 -->
+            <div id="adminPage" class="page">
+                <div class="admin-page">
+                    <div class="admin-section">
+                        <div class="admin-section-title">📊 数据统计</div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="statTotalRooms">10</div>
+                                <div class="stat-label">会议室总数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statTotalBookings">0</div>
+                                <div class="stat-label">今日预订</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statTotalUsers">3</div>
+                                <div class="stat-label">系统用户</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statVipUsers">1</div>
+                                <div class="stat-label">高级用户</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <div class="admin-section-title">👥 员工权限管理</div>
+                        <div class="search-box">
+                            <span>🔍</span>
+                            <input type="text" placeholder="搜索员工姓名" id="userSearch" oninput="app.searchUsers()">
+                        </div>
+                        <div class="user-list" id="adminUserList"></div>
+                    </div>
+
+                    <div class="admin-section">
+                        <div class="admin-section-title">📋 权限变更日志</div>
+                        <div class="log-list" id="permissionLogs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部导航 -->
+            <nav class="bottom-nav" id="bottomNav">
+                <div class="nav-item active" onclick="app.switchTab('rooms')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="16" rx="2"/>
+                        <path d="M8 9H16M8 13H13M8 17H11"/>
+                    </svg>
+                    <span class="nav-text">会议室</span>
+                </div>
+                <div class="nav-item" onclick="app.switchTab('booking')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="16" rx="2"/>
+                        <path d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
+                    <span class="nav-text">预订</span>
+                </div>
+                <div class="nav-item" onclick="app.switchTab('myBookings')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span class="nav-text">我的</span>
+                </div>
+                <div class="nav-item" id="adminNavItem" style="display: none;" onclick="app.switchTab('admin')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="nav-text">管理</span>
+                </div>
+            </nav>
+            </div><!-- /main-content-wrapper -->
+        </div>
+
+        <!-- VIP升级提示Sheet -->
+        <div id="vipSheet" class="bottom-sheet" onclick="app.hideVipSheet(event)">
+            <div class="bottom-sheet-content" onclick="event.stopPropagation()">
+                <div class="bottom-sheet-header">
+                    <span class="bottom-sheet-title">高级会议室</span>
+                    <button class="bottom-sheet-close" onclick="app.hideVipSheet()">✕</button>
+                </div>
+                <div class="vip-info">
+                    <div class="vip-icon">👑</div>
+                    <div class="vip-title">VIP会议室专属权限</div>
+                    <div class="vip-desc">此会议室为高级员工专属，配备顶级设施</div>
+                </div>
+                <div class="vip-features">
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>4K超高清投影设备</span>
+                    </div>
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>专业视频会议系统</span>
+                    </div>
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>智能电子白板</span>
+                    </div>
+                    <div class="vip-feature">
+                        <div class="vip-feature-icon">✓</div>
+                        <span>全景落地窗视野</span>
+                    </div>
+                </div>
+                <button class="submit-btn" onclick="app.applyForUpgrade()">申请升级权限</button>
+            </div>
+        </div>
+
+        <!-- 成功弹窗 -->
+        <div id="successModal" class="modal" onclick="app.hideSuccessModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon">🎉</div>
+                <div class="modal-title">预订成功！</div>
+                <div class="modal-message">您的会议室预订已成功提交</div>
+                <button class="modal-btn primary" onclick="app.hideSuccessModal()">确定</button>
+            </div>
+        </div>
+
+        <!-- 错误弹窗 -->
+        <div id="errorModal" class="modal" onclick="app.hideErrorModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon">⚠️</div>
+                <div class="modal-title" id="errorTitle">预订失败</div>
+                <div class="modal-message" id="errorMessage">请检查您的预订信息</div>
+                <button class="modal-btn primary" onclick="app.hideErrorModal()">确定</button>
+            </div>
+        </div>
+
+        <!-- 确认取消弹窗 -->
+        <div id="confirmCancelModal" class="modal confirm-modal" onclick="app.hideConfirmCancelModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-icon">❓</div>
+                <div class="modal-title">确认取消预订</div>
+                <div class="modal-message">确定要取消这个会议室预订吗？此操作不可撤销。</div>
+                <div class="modal-buttons">
+                    <button class="modal-btn secondary" onclick="app.hideConfirmCancelModal()">再想想</button>
+                    <button class="modal-btn primary" onclick="app.confirmCancelBooking()" style="background: var(--danger);">确认取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 会议室数据
+        const ROOMS_DATA = [
+            { id: 1, name: '木星会议室', capacity: 20, location: '3楼东侧', equipment: ['投影仪', '白板', '音响'], type: 'normal' },
+            { id: 2, name: '火星会议室', capacity: 12, location: '3楼西侧', equipment: ['投影仪', '白板', '电视'], type: 'normal' },
+            { id: 3, name: '水星会议室', capacity: 6, location: '2楼西侧', equipment: ['电视', '白板'], type: 'normal' },
+            { id: 4, name: '月球洽谈室', capacity: 4, location: '2楼休息区', equipment: ['茶几', '沙发', '电视'], type: 'normal' },
+            { id: 5, name: '天王星会议室', capacity: 8, location: '4楼东侧', equipment: ['投影仪', '白板'], type: 'normal' },
+            { id: 6, name: '海王星会议室', capacity: 10, location: '4楼西侧', equipment: ['投影仪', '视频会议'], type: 'normal' },
+            { id: 7, name: '冥王星会议室', capacity: 6, location: '5楼', equipment: ['白板', '电视'], type: 'normal' },
+            { id: 8, name: '金星VIP会议室', capacity: 20, location: '1楼', equipment: ['4K投影', '视频会议', '电子白板'], type: 'vip', requiredLevel: 'premium' },
+            { id: 9, name: '土星VIP会议室', capacity: 40, location: '1楼大厅', equipment: ['舞台', '音响', '麦克风', '4K投影'], type: 'vip', requiredLevel: 'premium' },
+            { id: 10, name: '银河VIP会议室', capacity: 30, location: '顶楼', equipment: ['全景落地窗', '视频会议', '智能白板'], type: 'vip', requiredLevel: 'premium' }
+        ];
+
+        // 用户数据
+        const USERS_DATA = {
+            zhangsan: { id: 'zhangsan', name: '张三', role: 'normal', avatar: '张' },
+            lisi: { id: 'lisi', name: '李四', role: 'premium', avatar: '李' },
+            wangwu: { id: 'wangwu', name: '王五', role: 'admin', avatar: '王' }
+        };
+
+        // 应用主对象
+        const app = {
+            currentUser: null,
+            currentTab: 'rooms',
+            roomFilter: 'all',
+            selectedRoom: null,
+            selectedDate: null,
+            selectedTimeSlots: [],
+            bookings: [],
+            permissionLogs: [],
+            roomSelectExpanded: false,
+            pendingCancelBookingId: null,
+
+            // 初始化
+            init() {
+                this.loadData();
+                this.generateDates();
+                this.updateSubmitButtonState();
+                this.checkLoginStatus();
+            },
+
+            // 加载本地数据
+            loadData() {
+                const savedUser = localStorage.getItem('currentUser');
+                const savedBookings = localStorage.getItem('bookings');
+                const savedLogs = localStorage.getItem('permissionLogs');
+                
+                if (savedUser) {
+                    this.currentUser = JSON.parse(savedUser);
+                }
+                if (savedBookings) {
+                    this.bookings = JSON.parse(savedBookings);
+                }
+                if (savedLogs) {
+                    this.permissionLogs = JSON.parse(savedLogs);
+                }
+            },
+
+            // 保存数据
+            saveData() {
+                localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                localStorage.setItem('bookings', JSON.stringify(this.bookings));
+                localStorage.setItem('permissionLogs', JSON.stringify(this.permissionLogs));
+            },
+
+            // 检查登录状态
+            checkLoginStatus() {
+                if (this.currentUser) {
+                    this.showMainApp();
+                }
+            },
+
+            // 显示用户选择
+            showUserSelect() {
+                // 公众号网页授权：直接跳转到微信授权页
+                const appid = 'wxd4f89280580cb957';
+                const redirectUri = encodeURIComponent(window.location.origin + '/wx-callback.html');
+                const state = encodeURIComponent(window.location.pathname);
+                const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=${state}#wechat_redirect`;
+                window.location.href = authUrl;
+            },
+
+            // 隐藏用户选择
+            hideUserSelect(event) {
+                if (!event || event.target === event.currentTarget) {
+                    document.getElementById('userSelectModal').classList.remove('show');
+                }
+            },
+
+            // 登录
+            login(userId) {
+                this.currentUser = { ...USERS_DATA[userId] };
+                this.saveData();
+                this.hideUserSelect();
+                this.showMainApp();
+            },
+
+            // 退出登录
+            logout() {
+                localStorage.removeItem('currentUser');
+                this.currentUser = null;
+                document.getElementById('mainApp').style.display = 'none';
+                document.getElementById('loginPage').style.display = 'flex';
+            },
+
+            // 显示主应用
+            showMainApp() {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                
+                // 更新用户信息
+                document.getElementById('userAvatar').textContent = this.currentUser.avatar;
+                document.getElementById('userName').textContent = this.currentUser.name;
+                
+                // 更新PC端侧边栏用户信息
+                const pcUserAvatar = document.getElementById('pcUserAvatar');
+                const pcUserName = document.getElementById('pcUserName');
+                const pcUserBadge = document.getElementById('pcUserBadge');
+                if (pcUserAvatar) pcUserAvatar.textContent = this.currentUser.avatar;
+                if (pcUserName) pcUserName.textContent = this.currentUser.name;
+                if (pcUserBadge) {
+                    if (this.currentUser.role === 'normal') {
+                        pcUserBadge.innerHTML = '👑 银色';
+                    } else if (this.currentUser.role === 'premium') {
+                        pcUserBadge.innerHTML = '👑 金色';
+                    } else {
+                        pcUserBadge.textContent = 'ADMIN';
+                    }
+                }
+                
+                const badge = document.getElementById('userBadge');
+                badge.className = 'header-badge ' + this.currentUser.role;
+                if (this.currentUser.role === 'normal') {
+                    badge.innerHTML = '👑 银色';
+                } else if (this.currentUser.role === 'premium') {
+                    badge.innerHTML = '👑 金色';
+                } else {
+                    badge.textContent = 'ADMIN';
+                }
+
+                // 显示权限提示条
+                if (this.currentUser.role === 'normal') {
+                    document.getElementById('permissionBanner').style.display = 'flex';
+                }
+
+                // 显示管理员导航
+                if (this.currentUser.role === 'admin') {
+                    document.getElementById('adminNavItem').style.display = 'flex';
+                    document.getElementById('pcAdminNavItem').style.display = 'flex';
+                }
+
+                this.renderRooms();
+                this.renderRoomSelect();
+                this.renderMyBookings();
+                this.renderAdminUsers();
+                this.renderPermissionLogs();
+                this.updateStats();
+            },
+
+            // 关闭权限提示条
+            closePermissionBanner() {
+                document.getElementById('permissionBanner').style.display = 'none';
+            },
+
+            // 生成日期选择器
+            generateDates() {
+                const container = document.getElementById('dateSelector');
+                const today = new Date();
+                const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                
+                container.innerHTML = '';
+                
+                for (let i = 0; i < 14; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    
+                    const dayName = i === 0 ? '今天' : days[date.getDay()];
+                    const dateStr = date.getDate();
+                    const fullDate = date.toISOString().split('T')[0];
+                    
+                    const dateItem = document.createElement('div');
+                    dateItem.className = 'date-item' + (i === 0 ? ' active' : '');
+                    dateItem.innerHTML = `
+                        <div class="date-item-day">${dayName}</div>
+                        <div class="date-item-date">${dateStr}</div>
+                    `;
+                    dateItem.onclick = () => this.selectDate(fullDate, dateItem);
+                    dateItem.dataset.date = fullDate;
+                    
+                    container.appendChild(dateItem);
+                }
+                
+                this.selectedDate = today.toISOString().split('T')[0];
+            },
+
+            // 选择日期
+            selectDate(date, element) {
+                this.selectedDate = date;
+                document.querySelectorAll('.date-item').forEach(el => el.classList.remove('active'));
+                element.classList.add('active');
+                this.renderTimeSlots();
+            },
+
+            // 渲染时间段
+            renderTimeSlots() {
+                const container = document.getElementById('timeGrid');
+                container.innerHTML = '';
+                
+                // 如果没有选择会议室，显示提示
+                if (!this.selectedRoom) {
+                    container.innerHTML = '<div class="time-slot-placeholder">请先选择会议室</div>';
+                    return;
+                }
+                
+                // 获取当前会议室和日期的所有预订
+                const existingBookings = this.getExistingBookings(this.selectedRoom.id, this.selectedDate);
+                
+                for (let hour = 8; hour < 20; hour++) {
+                    for (let min = 0; min < 60; min += 30) {
+                        const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+                        const slot = document.createElement('div');
+                        
+                        // 检查该时间段是否被预订
+                        const booking = existingBookings.find(b => {
+                            const slotTime = time;
+                            return slotTime >= b.startTime && slotTime < b.endTime;
+                        });
+                        
+                        const isOccupied = !!booking;
+                        const isSelected = this.selectedTimeSlots.includes(time);
+                        
+                        if (isOccupied) {
+                            slot.className = 'time-slot occupied';
+                            slot.innerHTML = `
+                                <span>${time}</span>
+                                <span class="booker-name">${booking.userName}</span>
+                            `;
+                        } else if (isSelected) {
+                            slot.className = 'time-slot selected';
+                            slot.textContent = time;
+                            slot.onclick = () => this.toggleTimeSlot(time, slot);
+                        } else {
+                            slot.className = 'time-slot available';
+                            slot.textContent = time;
+                            slot.onclick = () => this.toggleTimeSlot(time, slot);
+                        }
+                        
+                        slot.dataset.time = time;
+                        container.appendChild(slot);
+                    }
+                }
+            },
+
+            // 获取指定会议室和日期的现有预订
+            getExistingBookings(roomId, date) {
+                return this.bookings.filter(b => 
+                    b.roomId === roomId &&
+                    b.date === date &&
+                    b.status !== 'cancelled'
+                );
+            },
+
+            // 切换时间段选择
+            toggleTimeSlot(time, element) {
+                if (element.classList.contains('occupied')) return;
+                
+                const index = this.selectedTimeSlots.indexOf(time);
+                if (index > -1) {
+                    this.selectedTimeSlots.splice(index, 1);
+                    element.classList.remove('selected');
+                    element.classList.add('available');
+                } else {
+                    this.selectedTimeSlots.push(time);
+                    this.selectedTimeSlots.sort();
+                    element.classList.remove('available');
+                    element.classList.add('selected');
+                }
+                
+                this.updateSubmitButtonState();
+            },
+
+            // 更新提交按钮状态
+            updateSubmitButtonState() {
+                const btn = document.getElementById('submitBookingBtn');
+                const hasRoom = !!this.selectedRoom;
+                const hasDate = !!this.selectedDate;
+                const hasTimeSlots = this.selectedTimeSlots.length > 0;
+                
+                btn.disabled = !(hasRoom && hasDate && hasTimeSlots);
+            },
+
+            // 筛选会议室
+            filterRooms(type) {
+                this.roomFilter = type;
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+                this.renderRooms();
+            },
+
+            // 渲染会议室列表
+            renderRooms() {
+                const container = document.getElementById('roomList');
+                container.innerHTML = '';
+                
+                const isNormal = this.currentUser.role === 'normal';
+                
+                ROOMS_DATA.forEach(room => {
+                    if (this.roomFilter === 'available' && room.type === 'vip' && isNormal) {
+                        return;
+                    }
+                    
+                    const isVip = room.type === 'vip';
+                    const isLocked = isVip && isNormal;
+                    
+                    const card = document.createElement('div');
+                    card.className = `room-card ${isVip ? 'vip' : ''} ${isLocked ? 'locked' : ''}`;
+                    
+                    let equipmentHtml = room.equipment.map(e => `<span class="equipment-tag">${e}</span>`).join('');
+                    
+                    card.innerHTML = `
+                        ${isLocked ? '<div class="room-lock-overlay"><div class="room-lock-icon">🔒</div></div>' : ''}
+                        <div class="room-header">
+                            <div class="room-name-section">
+                                <span class="room-name">${room.name}</span>
+                                ${isVip ? '<span class="room-vip-badge">VIP</span>' : ''}
+                            </div>
+                            <span class="room-capacity">👥 ${room.capacity}人</span>
+                        </div>
+                        <div class="room-info">
+                            <div class="room-location">📍 ${room.location}</div>
+                            <div class="room-equipment">${equipmentHtml}</div>
+                        </div>
+                    `;
+                    
+                    card.onclick = () => this.handleRoomClick(room);
+                    container.appendChild(card);
+                });
+            },
+
+            // 处理会议室点击
+            handleRoomClick(room) {
+                if (room.type === 'vip' && this.currentUser.role === 'normal') {
+                    this.showVipSheet(room);
+                } else {
+                    this.selectedRoom = room;
+                    this.roomSelectExpanded = false;
+                    this.switchTab('booking');
+                    this.renderRoomSelect();
+                    this.renderTimeSlots();
+                    this.updateSubmitButtonState();
+                }
+            },
+
+            // 显示VIP提示
+            showVipSheet(room) {
+                document.getElementById('vipSheet').classList.add('show');
+            },
+
+            // 隐藏VIP提示
+            hideVipSheet(event) {
+                if (!event || event.target === event.currentTarget) {
+                    document.getElementById('vipSheet').classList.remove('show');
+                }
+            },
+
+            // 申请升级
+            applyForUpgrade() {
+                this.hideVipSheet();
+                this.showError('申请已提交', '您的升级申请已发送给管理员，请耐心等待审核。');
+            },
+
+            // 渲染会议室选择区域
+            renderRoomSelect() {
+                const container = document.getElementById('roomSelectContainer');
+                
+                if (!this.selectedRoom) {
+                    // 未选择会议室，显示展开的选择列表
+                    container.innerHTML = `
+                        <div class="room-select-list" id="roomSelectList"></div>
+                    `;
+                    this.renderRoomSelectList();
+                } else if (this.roomSelectExpanded) {
+                    // 已选择会议室，但展开列表
+                    container.innerHTML = `
+                        <div class="room-select-list" id="roomSelectList"></div>
+                    `;
+                    this.renderRoomSelectList();
+                } else {
+                    // 已选择会议室，显示卡片
+                    const isVip = this.selectedRoom.type === 'vip';
+                    const equipmentHtml = this.selectedRoom.equipment.map(e => `<span>${e}</span>`).join('');
+                    
+                    container.innerHTML = `
+                        <div class="room-selected-card ${isVip ? 'vip' : ''}">
+                            <div class="room-selected-header">
+                                <span class="room-selected-name">${this.selectedRoom.name}</span>
+                                ${isVip ? '<span class="room-selected-badge">VIP</span>' : ''}
+                            </div>
+                            <div class="room-selected-meta">📍 ${this.selectedRoom.location} · 👥 ${this.selectedRoom.capacity}人</div>
+                            <div class="room-selected-equipment">${equipmentHtml}</div>
+                            <button class="room-change-btn" onclick="app.expandRoomSelect()">更换</button>
+                        </div>
+                    `;
+                }
+            },
+
+            // 展开会议室选择列表
+            expandRoomSelect() {
+                this.roomSelectExpanded = true;
+                this.renderRoomSelect();
+            },
+
+            // 渲染会议室选择列表
+            renderRoomSelectList() {
+                const container = document.getElementById('roomSelectList') || document.getElementById('roomSelectContainer');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                const isNormal = this.currentUser.role === 'normal';
+                
+                ROOMS_DATA.forEach(room => {
+                    const isVip = room.type === 'vip';
+                    const isLocked = isVip && isNormal;
+                    const isSelected = this.selectedRoom?.id === room.id;
+                    
+                    const item = document.createElement('div');
+                    item.className = `room-select-item ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`;
+                    item.innerHTML = `
+                        <div class="room-select-info">
+                            <div class="room-select-name">${room.name} ${isVip ? '<span style="color: var(--vip-gold);">VIP</span>' : ''}</div>
+                            <div class="room-select-meta">${room.location} · ${room.capacity}人</div>
+                        </div>
+                        ${isLocked ? '<span style="color: var(--text-secondary);">🔒</span>' : ''}
+                    `;
+                    
+                    if (!isLocked) {
+                        item.onclick = () => {
+                            this.selectedRoom = room;
+                            this.roomSelectExpanded = false;
+                            this.selectedTimeSlots = []; // 清空已选时间
+                            this.renderRoomSelect();
+                            this.renderTimeSlots();
+                            this.updateSubmitButtonState();
+                        };
+                    }
+                    
+                    container.appendChild(item);
+                });
+            },
+
+            // 提交预订
+            submitBooking() {
+                if (!this.selectedRoom) {
+                    this.showError('请选择会议室', '请先选择一个会议室');
+                    return;
+                }
+                
+                if (this.selectedTimeSlots.length === 0) {
+                    this.showError('请选择时间段', '请至少选择一个时间段');
+                    return;
+                }
+                
+                const title = document.getElementById('bookingTitle').value.trim();
+                if (!title) {
+                    this.showError('请填写主题', '会议主题不能为空');
+                    return;
+                }
+                
+                // 权限检查
+                if (this.selectedRoom.type === 'vip' && this.currentUser.role === 'normal') {
+                    this.showError('权限不足', '普通员工无法预订VIP会议室');
+                    return;
+                }
+                
+                // 冲突检查
+                const startTime = this.selectedTimeSlots[0];
+                const endTime = this.getEndTime(this.selectedTimeSlots[this.selectedTimeSlots.length - 1]);
+                
+                const hasConflict = this.bookings.some(b => 
+                    b.roomId === this.selectedRoom.id &&
+                    b.date === this.selectedDate &&
+                    b.status !== 'cancelled' &&
+                    this.isTimeOverlap(b.startTime, b.endTime, startTime, endTime)
+                );
+                
+                if (hasConflict) {
+                    this.showError('时间冲突', '该时间段已被预订，请选择其他时间');
+                    return;
+                }
+                
+                // 创建预订
+                const booking = {
+                    id: Date.now().toString(),
+                    roomId: this.selectedRoom.id,
+                    roomName: this.selectedRoom.name,
+                    roomType: this.selectedRoom.type,
+                    date: this.selectedDate,
+                    startTime: startTime,
+                    endTime: endTime,
+                    title: title,
+                    attendees: document.getElementById('bookingAttendees').value.trim(),
+                    userId: this.currentUser.id,
+                    userName: this.currentUser.name,
+                    status: 'upcoming',
+                    createdAt: new Date().toISOString()
+                };
+                
+                this.bookings.push(booking);
+                this.saveData();
+                
+                // 重置表单
+                document.getElementById('bookingTitle').value = '';
+                document.getElementById('bookingAttendees').value = '';
+                this.selectedRoom = null;
+                this.selectedTimeSlots = [];
+                this.renderRoomSelect();
+                this.renderTimeSlots();
+                this.updateSubmitButtonState();
+                
+                this.showSuccess();
+                this.renderMyBookings();
+                this.updateStats();
+                
+                // 自动跳转到"我的预订"页面
+                setTimeout(() => {
+                    this.hideSuccessModal();
+                    this.switchTab('myBookings');
+                }, 1500);
+            },
+
+            // 获取结束时间
+            getEndTime(startTime) {
+                const [hour, min] = startTime.split(':').map(Number);
+                let endHour = hour;
+                let endMin = min + 30;
+                if (endMin >= 60) {
+                    endHour++;
+                    endMin = 0;
+                }
+                return `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+            },
+
+            // 检查时间重叠
+            isTimeOverlap(start1, end1, start2, end2) {
+                return start1 < end2 && end1 > start2;
+            },
+
+            // 显示成功弹窗
+            showSuccess() {
+                document.getElementById('successModal').classList.add('show');
+            },
+
+            // 隐藏成功弹窗
+            hideSuccessModal(event) {
+                if (!event || event.target === event.currentTarget) {
+                    document.getElementById('successModal').classList.remove('show');
+                }
+            },
+
+            // 显示错误弹窗
+            showError(title, message) {
+                document.getElementById('errorTitle').textContent = title;
+                document.getElementById('errorMessage').textContent = message;
+                document.getElementById('errorModal').classList.add('show');
+            },
+
+            // 隐藏错误弹窗
+            hideErrorModal(event) {
+                if (!event || event.target === event.currentTarget) {
+                    document.getElementById('errorModal').classList.remove('show');
+                }
+            },
+
+            // 显示确认取消弹窗
+            showConfirmCancelModal(bookingId) {
+                this.pendingCancelBookingId = bookingId;
+                document.getElementById('confirmCancelModal').classList.add('show');
+            },
+
+            // 隐藏确认取消弹窗
+            hideConfirmCancelModal(event) {
+                if (!event || event.target === event.currentTarget) {
+                    document.getElementById('confirmCancelModal').classList.remove('show');
+                    this.pendingCancelBookingId = null;
+                }
+            },
+
+            // 确认取消预订
+            confirmCancelBooking() {
+                if (this.pendingCancelBookingId) {
+                    const booking = this.bookings.find(b => b.id === this.pendingCancelBookingId);
+                    if (booking) {
+                        booking.status = 'cancelled';
+                        this.saveData();
+                        this.renderMyBookings();
+                        this.updateStats();
+                    }
+                }
+                this.hideConfirmCancelModal();
+            },
+
+            // 渲染我的预订
+            renderMyBookings() {
+                const container = document.getElementById('myBookingsList');
+                const myBookings = this.bookings.filter(b => b.userId === this.currentUser.id);
+                
+                if (myBookings.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <div class="empty-state-text">暂无预订记录</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 按时间倒序
+                myBookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
+                container.innerHTML = myBookings.map(booking => {
+                    const isVip = booking.roomType === 'vip';
+                    const statusClass = booking.status;
+                    const statusText = {
+                        upcoming: '即将进行',
+                        completed: '已完成',
+                        cancelled: '已取消'
+                    }[booking.status];
+                    
+                    const isExpired = new Date(booking.date + 'T' + booking.endTime) < new Date();
+                    const canCancel = booking.status === 'upcoming' && !isExpired;
+                    
+                    // 格式化日期显示
+                    const dateObj = new Date(booking.date);
+                    const month = dateObj.getMonth() + 1;
+                    const day = dateObj.getDate();
+                    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                    const weekday = weekdays[dateObj.getDay()];
+                    const formattedDate = `${month}月${day}日 ${weekday}`;
+                    
+                    return `
+                        <div class="booking-card ${isVip ? 'vip' : ''}">
+                            <div class="booking-header">
+                                <span class="booking-room">${booking.roomName} ${isVip ? '<span style="color: var(--vip-gold);">VIP</span>' : ''}</span>
+                                <span class="booking-status ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="booking-info">
+                                <div class="booking-info-item">📅 ${formattedDate}</div>
+                                <div class="booking-info-item">⏰ ${booking.startTime} - ${booking.endTime}</div>
+                                <div class="booking-info-item">📝 ${booking.title}</div>
+                                ${booking.attendees ? `<div class="booking-info-item">👥 ${booking.attendees}</div>` : ''}
+                            </div>
+                            ${canCancel ? `
+                                <div class="booking-actions">
+                                    <button class="booking-btn danger" onclick="app.showConfirmCancelModal('${booking.id}')">取消预订</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            // 渲染管理员用户列表
+            renderAdminUsers() {
+                if (this.currentUser.role !== 'admin') return;
+                
+                const container = document.getElementById('adminUserList');
+                const searchTerm = document.getElementById('userSearch')?.value?.toLowerCase() || '';
+                
+                const users = Object.values(USERS_DATA).filter(u => 
+                    u.name.toLowerCase().includes(searchTerm)
+                );
+                
+                container.innerHTML = users.map(user => `
+                    <div class="user-list-item">
+                        <div class="user-list-avatar">${user.avatar}</div>
+                        <div class="user-list-info">
+                            <div class="user-list-name">${user.name}</div>
+                            <div class="user-list-role">${user.role === 'admin' ? '管理员' : user.role === 'premium' ? '高级员工' : '普通员工'}</div>
+                        </div>
+                        ${user.role !== 'admin' ? `
+                            <div class="role-toggle">
+                                <button class="role-btn ${user.role === 'normal' ? 'active' : ''}" onclick="app.changeUserRole('${user.id}', 'normal')">普通</button>
+                                <button class="role-btn vip ${user.role === 'premium' ? 'active' : ''}" onclick="app.changeUserRole('${user.id}', 'premium')">高级</button>
+                            </div>
+                        ` : '<span style="color: var(--admin-red); font-size: 12px;">ADMIN</span>'}
+                    </div>
+                `).join('');
+            },
+
+            // 搜索用户
+            searchUsers() {
+                this.renderAdminUsers();
+            },
+
+            // 修改用户权限
+            changeUserRole(userId, newRole) {
+                const user = USERS_DATA[userId];
+                const oldRole = user.role;
+                
+                if (oldRole === newRole) return;
+                
+                user.role = newRole;
+                
+                // 记录日志
+                this.permissionLogs.unshift({
+                    time: new Date().toLocaleString('zh-CN'),
+                    user: user.name,
+                    action: oldRole === 'normal' ? '升级为高级员工' : '降级为普通员工',
+                    operator: this.currentUser.name
+                });
+                
+                this.saveData();
+                this.renderAdminUsers();
+                this.renderPermissionLogs();
+                this.updateStats();
+            },
+
+            // 渲染权限日志
+            renderPermissionLogs() {
+                const container = document.getElementById('permissionLogs');
+                
+                if (this.permissionLogs.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无记录</div>';
+                    return;
+                }
+                
+                container.innerHTML = this.permissionLogs.slice(0, 20).map(log => `
+                    <div class="log-item">
+                        <div class="log-time">${log.time}</div>
+                        <div class="log-content">
+                            <span class="user">${log.operator}</span> 将 
+                            <span class="user">${log.user}</span> 
+                            <span class="action">${log.action}</span>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            // 更新统计
+            updateStats() {
+                if (this.currentUser.role !== 'admin') return;
+                
+                const today = new Date().toISOString().split('T')[0];
+                const todayBookings = this.bookings.filter(b => b.date === today && b.status !== 'cancelled').length;
+                const vipUsers = Object.values(USERS_DATA).filter(u => u.role === 'premium').length;
+                
+                document.getElementById('statTotalBookings').textContent = todayBookings;
+                document.getElementById('statVipUsers').textContent = vipUsers;
+            },
+
+            // 切换Tab
+            switchTab(tab) {
+                this.currentTab = tab;
+                
+                // 更新移动端导航状态
+                document.querySelectorAll('.bottom-nav .nav-item').forEach((item, index) => {
+                    item.classList.remove('active');
+                    const tabs = ['rooms', 'booking', 'myBookings', 'admin'];
+                    if (tabs[index] === tab) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // 更新PC端侧边栏状态
+                document.querySelectorAll('.pc-nav-item').forEach((item, index) => {
+                    item.classList.remove('active');
+                    const tabs = ['rooms', 'booking', 'myBookings', 'admin'];
+                    if (tabs[index] === tab) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // 切换页面
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                document.getElementById(tab + 'Page').classList.add('active');
+                
+                // 更新标题
+                const titles = {
+                    rooms: '会议室预定',
+                    booking: '预订会议室',
+                    myBookings: '我的预订',
+                    admin: '系统管理'
+                };
+                const pageTitle = document.getElementById('pageTitle');
+                if (pageTitle) pageTitle.textContent = titles[tab];
+                
+                // 刷新数据
+                if (tab === 'myBookings') {
+                    this.renderMyBookings();
+                } else if (tab === 'admin') {
+                    this.renderAdminUsers();
+                    this.updateStats();
+                } else if (tab === 'booking') {
+                    this.renderRoomSelect();
+                    this.renderTimeSlots();
+                    this.updateSubmitButtonState();
+                }
+            }
+        };
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
