@@ -1,0 +1,31 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { getV2ColumnDefinitions, ensureV2Schema } = require('../src/schema');
+
+test('declares required V2 columns for users and meeting rooms', () => {
+  const definitions = getV2ColumnDefinitions();
+  assert.ok(definitions.users.english_name.includes('VARCHAR(100)'));
+  assert.ok(definitions.users.booking_permissions.includes('JSON'));
+  assert.ok(definitions.users.daily_booking_limit_minutes.includes('INT'));
+  assert.ok(definitions.meeting_rooms.room_type.includes("ENUM('normal', 'training', 'vip')"));
+});
+
+test('adds only missing columns with a fake pool', async () => {
+  const executed = [];
+  const fakePool = {
+    async execute(sql, params) {
+      executed.push({ sql, params });
+      if (sql.includes('SHOW COLUMNS')) {
+        const columnName = params[0];
+        return [[columnName === 'english_name' ? { Field: 'english_name' } : null].filter(Boolean)];
+      }
+      return [[]];
+    }
+  };
+
+  await ensureV2Schema(fakePool);
+
+  assert.equal(executed.some(call => call.sql.includes('ADD COLUMN english_name')), false);
+  assert.equal(executed.some(call => call.sql.includes('ADD COLUMN booking_permissions')), true);
+  assert.equal(executed.some(call => call.sql.includes('ADD COLUMN room_type')), true);
+});

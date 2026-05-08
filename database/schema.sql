@@ -12,11 +12,20 @@ CREATE TABLE IF NOT EXISTS users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     userid VARCHAR(64) UNIQUE NOT NULL COMMENT '企业微信用户ID',
     name VARCHAR(64) NOT NULL COMMENT '用户姓名',
+    password_hash VARCHAR(255) COMMENT '密码哈希',
+    gender ENUM('unknown', 'male', 'female') DEFAULT 'unknown' COMMENT '性别',
     avatar VARCHAR(255) COMMENT '头像URL',
     department VARCHAR(255) COMMENT '部门',
     role ENUM('normal', 'premium', 'admin') DEFAULT 'normal' COMMENT '用户角色',
     phone VARCHAR(20) COMMENT '手机号',
     email VARCHAR(100) COMMENT '邮箱',
+    is_active BOOLEAN DEFAULT TRUE COMMENT '是否启用',
+    english_name VARCHAR(100) DEFAULT NULL COMMENT '英文名',
+    last_name VARCHAR(100) DEFAULT NULL COMMENT '姓氏',
+    region VARCHAR(100) DEFAULT NULL COMMENT '区域',
+    group_name VARCHAR(100) DEFAULT NULL COMMENT '组别',
+    booking_permissions JSON DEFAULT (JSON_ARRAY('normal')) COMMENT '可预订会议室类型',
+    daily_booking_limit_minutes INT DEFAULT 180 COMMENT '每日预订上限（分钟）',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login_at TIMESTAMP NULL COMMENT '最后登录时间',
@@ -35,6 +44,7 @@ CREATE TABLE IF NOT EXISTS meeting_rooms (
     images JSON COMMENT '会议室图片URL数组',
     description TEXT COMMENT '会议室描述',
     is_vip BOOLEAN DEFAULT FALSE COMMENT '是否VIP会议室',
+    room_type ENUM('normal', 'training', 'vip') DEFAULT 'normal' COMMENT '会议室类型',
     is_active BOOLEAN DEFAULT TRUE COMMENT '是否启用',
     sort_order INT DEFAULT 0 COMMENT '排序',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -98,7 +108,9 @@ CREATE TABLE IF NOT EXISTS system_config (
 
 -- 初始化数据
 INSERT INTO system_config (config_key, config_value, description) VALUES
-('booking_max_days', '7', '最大可提前预订天数'),
+('default_daily_booking_limit_minutes', '180', '默认每日预订上限（分钟）'),
+('booking_max_days', '365', '最大可提前预订天数'),
+('booking_purposes', '["见客","招募","培训","讲座","会议","其他"]', '预订用途选项'),
 ('booking_max_duration', '4', '单次最大预订时长（小时）'),
 ('vip_only_rooms', '[]', '仅VIP可预订的会议室ID列表'),
 ('work_start_time', '09:00', '工作开始时间'),
@@ -106,12 +118,12 @@ INSERT INTO system_config (config_key, config_value, description) VALUES
 ('time_slot_interval', '30', '时间间隔（分钟）');
 
 -- 插入示例会议室
-INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, description, is_vip, sort_order) VALUES
-('第一会议室', 8, '3F', 'A区301室', '["投影仪", "白板", "音响"]', '标准会议室，适合小型会议', FALSE, 1),
-('第二会议室', 12, '3F', 'A区302室', '["投影仪", "白板", "音响", "视频会议"]', '中型会议室，配备视频会议设备', FALSE, 2),
-('第三会议室', 20, '3F', 'A区303室', '["4K投影", "电子白板", "音响", "视频会议", "同声传译"]', '大型会议室，适合部门会议', FALSE, 3),
-('VIP洽谈室', 6, '5F', 'B区501室', '["4K投影", "智能白板", "音响", "视频会议", "茶具"]', '高端洽谈室，配备茶歇服务', TRUE, 4),
-('董事会议室', 16, '5F', 'B区502室', '["4K投影", "智能白板", "音响", "视频会议", "同声传译", "电子表决"]', '董事级会议室，顶级配置', TRUE, 5);
+INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, description, is_vip, room_type, sort_order) VALUES
+('第一会议室', 8, '3F', 'A区301室', '["投影仪", "白板", "音响"]', '标准会议室，适合小型会议', FALSE, 'normal', 1),
+('第二会议室', 12, '3F', 'A区302室', '["投影仪", "白板", "音响", "视频会议"]', '中型会议室，配备视频会议设备', FALSE, 'normal', 2),
+('培训教室', 30, '4F', 'C区401室', '["投影仪", "白板", "音响", "培训桌椅"]', '培训会议室，适合课程和讲座', FALSE, 'training', 3),
+('VIP洽谈室', 6, '5F', 'B区501室', '["4K投影", "智能白板", "音响", "视频会议", "茶具"]', '高端洽谈室，配备茶歇服务', TRUE, 'vip', 4),
+('董事会议室', 16, '5F', 'B区502室', '["4K投影", "智能白板", "音响", "视频会议", "同声传译", "电子表决"]', '董事级会议室，顶级配置', TRUE, 'vip', 5);
 
 -- 插入示例管理员（企业微信登录后会自动创建）
 -- INSERT INTO users (userid, name, role, department) VALUES ('admin', '系统管理员', 'admin', 'IT部');
