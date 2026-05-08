@@ -64,6 +64,27 @@ test('validates purpose, attendee count, horizon, and time range', () => {
   }).message, /参与人数/);
 });
 
+test('rejects invalid booking dates', () => {
+  const validFields = {
+    start_time: '09:00',
+    end_time: '10:00',
+    title: '会议',
+    attendee_count: 10,
+    today: '2026-05-09',
+    roomCapacity: 20
+  };
+
+  assert.match(validateBookingInput({
+    ...validFields,
+    booking_date: 'not-a-date'
+  }).message, /日期/);
+
+  assert.match(validateBookingInput({
+    ...validFields,
+    booking_date: ''
+  }).message, /日期/);
+});
+
 test('limits daily total booking duration across all rooms', () => {
   const existingBookings = [
     { start_time: '09:00', end_time: '10:30' },

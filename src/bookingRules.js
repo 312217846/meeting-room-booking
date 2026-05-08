@@ -42,6 +42,11 @@ function daysBetween(startDate, endDate) {
   return Math.round((end - start) / 86400000);
 }
 
+function isValidDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
+  return Number.isFinite(new Date(`${value}T00:00:00`).getTime());
+}
+
 function validateBookingInput({ booking_date, start_time, end_time, title, attendee_count, today, roomCapacity }) {
   if (!BOOKING_PURPOSES.includes(title)) return { valid: false, message: '用途必须从固定选项中选择' };
   const count = Number(attendee_count);
@@ -49,6 +54,7 @@ function validateBookingInput({ booking_date, start_time, end_time, title, atten
   if (roomCapacity && count > Number(roomCapacity)) return { valid: false, message: `超出会议室容量限制（最大${roomCapacity}人）` };
   const duration = minutesBetween(start_time, end_time);
   if (!Number.isFinite(duration) || duration <= 0) return { valid: false, message: '结束时间必须晚于开始时间' };
+  if (!isValidDate(today) || !isValidDate(booking_date)) return { valid: false, message: '预订日期格式不正确' };
   const horizon = daysBetween(today, booking_date);
   if (horizon < 0) return { valid: false, message: '不能预订过去日期' };
   if (horizon > MAX_BOOKING_DAYS) return { valid: false, message: '最多只能预订未来一年内的时段' };
