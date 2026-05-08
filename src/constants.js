@@ -1,0 +1,13 @@
+const ROOM_TYPES = ['normal', 'training', 'vip'];
+const BOOKING_PURPOSES = ['见客', '招募', '培训', '讲座', '会议', '其他'];
+const DEFAULT_BOOKING_PERMISSIONS = ['normal'];
+const DEFAULT_DAILY_BOOKING_LIMIT_MINUTES = 180;
+const MAX_BOOKING_DAYS = 365;
+
+module.exports = {
+  ROOM_TYPES,
+  BOOKING_PURPOSES,
+  DEFAULT_BOOKING_PERMISSIONS,
+  DEFAULT_DAILY_BOOKING_LIMIT_MINUTES,
+  MAX_BOOKING_DAYS
+};
