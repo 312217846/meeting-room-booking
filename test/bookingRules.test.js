@@ -83,6 +83,12 @@ test('rejects invalid booking dates', () => {
     ...validFields,
     booking_date: ''
   }).message, /日期/);
+
+  assert.match(validateBookingInput({
+    ...validFields,
+    today: '2026-02-01',
+    booking_date: '2026-02-30'
+  }).message, /日期/);
 });
 
 test('limits daily total booking duration across all rooms', () => {

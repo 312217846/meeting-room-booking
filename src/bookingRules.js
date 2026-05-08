@@ -43,8 +43,16 @@ function daysBetween(startDate, endDate) {
 }
 
 function isValidDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
-  return Number.isFinite(new Date(`${value}T00:00:00`).getTime());
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isFinite(date.getTime())
+    && date.getFullYear() === year
+    && date.getMonth() + 1 === month
+    && date.getDate() === day;
 }
 
 function validateBookingInput({ booking_date, start_time, end_time, title, attendee_count, today, roomCapacity }) {
