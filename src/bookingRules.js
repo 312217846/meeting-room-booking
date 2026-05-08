@@ -22,7 +22,7 @@ function hasRoomTypePermission(user, room) {
 }
 
 function toMinutes(time) {
-  if (time === '24:00') return 24 * 60;
+  if (time === '24:00' || time === '24:00:00') return 24 * 60;
   const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(String(time || ''));
   if (!match) return NaN;
   return Number(match[1]) * 60 + Number(match[2]);

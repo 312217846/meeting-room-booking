@@ -17,8 +17,10 @@ test('checks room-type permissions independently from system role', () => {
 test('calculates 24-hour booking minutes and detects overlaps', () => {
   assert.equal(minutesBetween('00:00', '01:30'), 90);
   assert.equal(minutesBetween('23:30', '24:00'), 30);
+  assert.equal(minutesBetween('23:30:00', '24:00:00'), 30);
   assert.equal(rangesOverlap('09:00', '10:00', '10:00', '11:00'), false);
   assert.equal(rangesOverlap('09:00', '10:00', '09:30', '11:00'), true);
+  assert.equal(rangesOverlap('23:30:00', '24:00:00', '23:45:00', '24:00:00'), true);
 });
 
 test('validates purpose, attendee count, horizon, and time range', () => {
