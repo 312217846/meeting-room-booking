@@ -202,6 +202,12 @@ const app = {
         return permissions.length > 0 ? permissions.map(type => this.getRoomTypeLabel(type)).join('、') : '-';
     },
 
+    formatDailyBookingLimit(value) {
+        if (value === null || value === undefined || value === '') return '不限';
+        const minutes = Number(value);
+        return Number.isFinite(minutes) ? `${minutes}分钟` : '-';
+    },
+
     updateRoomTypeFilterButtons() {
         document.querySelectorAll('#roomTypeFilter [data-room-type]').forEach(button => {
             const selected = button.dataset.roomType === this.roomTypeFilter;
@@ -1005,7 +1011,7 @@ const app = {
             <td>${this.escapeHtml(user.region || '-')}</td>
             <td>${this.escapeHtml(user.group_name || user.groupName || '-')}</td>
             <td>${this.escapeHtml(this.formatBookingPermissions(user.booking_permissions))}</td>
-            <td>${user.daily_booking_limit_minutes ? `${Number(user.daily_booking_limit_minutes)}分钟` : '-'}</td>
+            <td>${this.escapeHtml(this.formatDailyBookingLimit(user.daily_booking_limit_minutes))}</td>
             <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '正常' : '禁用'}</span></td>
             <td><button class="btn-edit" onclick="app.resetUserPassword(${user.id})">重置</button></td>
             <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>

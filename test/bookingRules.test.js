@@ -125,4 +125,6 @@ test('limits daily total booking duration across all rooms', () => {
 
   assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '16:30', 180), false);
   assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '17:00', 180), true);
+  assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '20:00', null), false);
+  assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '20:00', ''), false);
 });

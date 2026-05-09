@@ -82,6 +82,14 @@ test('admin controls normalize database boolean flags from MySQL values', () => 
     assert.equal(app.normalizeDbFlag(1), true);
 });
 
+test('admin user daily booking limit labels distinguish unlimited from numeric limits', () => {
+    const app = loadFrontendApp();
+    assert.equal(app.formatDailyBookingLimit(null), '不限');
+    assert.equal(app.formatDailyBookingLimit(''), '不限');
+    assert.equal(app.formatDailyBookingLimit(0), '0分钟');
+    assert.equal(app.formatDailyBookingLimit('180'), '180分钟');
+});
+
 test('booking controls normalize API time values and enforce contiguous slots', () => {
     assert.match(appJs, /timeToMinutes/);
     assert.match(appJs, /isSlotOccupied/);

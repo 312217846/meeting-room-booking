@@ -71,8 +71,11 @@ function validateBookingInput({ booking_date, start_time, end_time, title, atten
 }
 
 function wouldExceedDailyLimit(existingBookings, startTime, endTime, limitMinutes) {
+  if (limitMinutes === null || limitMinutes === undefined || limitMinutes === '') return false;
+  const limit = Number(limitMinutes);
+  if (!Number.isFinite(limit)) return false;
   const used = existingBookings.reduce((sum, booking) => sum + minutesBetween(booking.start_time, booking.end_time), 0);
-  return used + minutesBetween(startTime, endTime) > Number(limitMinutes || 0);
+  return used + minutesBetween(startTime, endTime) > limit;
 }
 
 module.exports = {

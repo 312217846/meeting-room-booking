@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const {
   buildUserSearchQuery,
   buildImportedUserRecord,
-  disableUserAndCancelFutureBookings
+  disableUserAndCancelFutureBookings,
+  normalizeDailyBookingLimit
 } = require('../src/userService');
 
 test('builds user search across profile fields', () => {
@@ -44,6 +45,13 @@ test('maps imported user to database record with phone as initial password sourc
   assert.equal(record.booking_permissions, '["normal","training"]');
   assert.equal(record.daily_booking_limit_minutes, 180);
   assert.equal(record.is_active, true);
+});
+
+test('normalizes blank daily booking limit as unlimited', () => {
+  assert.equal(normalizeDailyBookingLimit(null), null);
+  assert.equal(normalizeDailyBookingLimit(''), null);
+  assert.equal(normalizeDailyBookingLimit('240'), 240);
+  assert.equal(normalizeDailyBookingLimit(undefined), 180);
 });
 
 test('disables user and cancels future confirmed bookings', async () => {

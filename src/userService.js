@@ -1,6 +1,16 @@
 const { DEFAULT_DAILY_BOOKING_LIMIT_MINUTES } = require('./constants');
 const { normalizeHongKongPhone } = require('./phone');
 
+function normalizeDailyBookingLimit(value) {
+  if (value === undefined) return DEFAULT_DAILY_BOOKING_LIMIT_MINUTES;
+  if (value === null) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 0
+    ? minutes
+    : DEFAULT_DAILY_BOOKING_LIMIT_MINUTES;
+}
+
 function buildUserSearchQuery(search) {
   const base = `SELECT id, userid, name, avatar, english_name, last_name, region, group_name, department, role, phone, email, gender, booking_permissions, daily_booking_limit_minutes, is_active, created_at, last_login_at FROM users`;
   const term = String(search || '').trim();
@@ -64,4 +74,9 @@ async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, tod
   }
 }
 
-module.exports = { buildUserSearchQuery, buildImportedUserRecord, disableUserAndCancelFutureBookings };
+module.exports = {
+  buildUserSearchQuery,
+  buildImportedUserRecord,
+  disableUserAndCancelFutureBookings,
+  normalizeDailyBookingLimit
+};

@@ -10,7 +10,8 @@ const { ensureV2Schema } = require('./src/schema');
 const {
     buildUserSearchQuery,
     buildImportedUserRecord,
-    disableUserAndCancelFutureBookings
+    disableUserAndCancelFutureBookings,
+    normalizeDailyBookingLimit
 } = require('./src/userService');
 const {
     hasRoomTypePermission,
@@ -312,7 +313,7 @@ function buildSessionUser(user) {
         region: user.region || null,
         group_name: user.group_name || null,
         booking_permissions: normalizeBookingPermissions(user.booking_permissions),
-        daily_booking_limit_minutes: user.daily_booking_limit_minutes || 180,
+        daily_booking_limit_minutes: normalizeDailyBookingLimit(user.daily_booking_limit_minutes),
         is_active: toBoolean(user.is_active, true),
         wechat_avatar: user.wechat_avatar || null
     };
@@ -1230,9 +1231,7 @@ app.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
             return res.status(400).json({ code: 400, message: '不能禁用当前登录用户' });
         }
 
-        const dailyLimit = Number.isInteger(Number(daily_booking_limit_minutes))
-            ? Number(daily_booking_limit_minutes)
-            : 180;
+        const dailyLimit = normalizeDailyBookingLimit(daily_booking_limit_minutes);
         const connection = await pool.getConnection();
 
         try {
