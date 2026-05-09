@@ -47,6 +47,7 @@ test('login page uses Utopia V2 branding and no WeChat login button', () => {
 test('pages include PMagic AI powered footer', () => {
     assert.match(html, /Powered by/);
     assert.match(html, /pmagic-powered/);
+    assert.match(html, /Powered by[\s\S]*pmagic-brand-lockup[\s\S]*pmagic-source-mark[\s\S]*PMagic AI/);
     assert.match(html, /pmagic-source-mark/);
     assert.match(html, /viewBox="0 0 800 800"/);
     assert.match(html, /#6B4FFF/);
