@@ -33,8 +33,23 @@ test('admin reports response includes booking usage ranking data', () => {
 });
 
 test('admin reports response includes dashboard summary fields', () => {
-  assert.match(serverJs, /activeUsers/);
-  assert.match(serverJs, /activeRooms/);
-  assert.match(serverJs, /peakDay/);
-  assert.match(serverJs, /totalHours/);
+    assert.match(serverJs, /activeUsers/);
+    assert.match(serverJs, /activeRooms/);
+    assert.match(serverJs, /peakDay/);
+    assert.match(serverJs, /totalHours/);
+});
+
+test('admin reports response includes expanded dashboard dimensions', () => {
+  assert.match(serverJs, /const \[roomTypeUsage\] = await pool\.execute/);
+  assert.match(serverJs, /const \[regionUsage\] = await pool\.execute/);
+  assert.match(serverJs, /const \[groupUsage\] = await pool\.execute/);
+  assert.match(serverJs, /const \[hourlyUsage\] = await pool\.execute/);
+  assert.match(serverJs, /const \[\[attendeeStats\]\] = await pool\.execute/);
+  assert.match(serverJs, /SUM\(COALESCE\(b\.attendee_count, 0\)\)/);
+  assert.match(serverJs, /HOUR\(b\.start_time\)/);
+  assert.match(serverJs, /roomTypeUsage/);
+  assert.match(serverJs, /regionUsage/);
+  assert.match(serverJs, /groupUsage/);
+  assert.match(serverJs, /hourlyUsage/);
+  assert.match(serverJs, /attendeeStats/);
 });

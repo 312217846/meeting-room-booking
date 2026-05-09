@@ -971,8 +971,10 @@ const app = {
         let rooms = [];
         try { const res = await API.getAllRooms(); if (res.code === 0) rooms = res.data; } catch (e) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px">加载失败</td></tr>';
+            this.renderAdminRoomCards([]);
             return;
         }
+        this.renderAdminRoomCards(rooms);
         tbody.innerHTML = rooms.map(room => {
             const eq = typeof room.equipment === 'string' ? JSON.parse(room.equipment || '[]') : (room.equipment || []);
             const eqStr = eq.slice(0, 3).join(', ') + (eq.length > 3 ? '...' : '');
@@ -988,6 +990,45 @@ const app = {
         }).join('');
     },
 
+    renderAdminRoomCards(rooms = []) {
+        const container = document.getElementById('adminRoomCards');
+        if (!container) return;
+        if (!rooms.length) {
+            container.innerHTML = '<div class="mobile-admin-card"><div class="mobile-card-title">暂无会议室</div><div class="mobile-card-meta">创建会议室后会显示在这里</div></div>';
+            return;
+        }
+        container.innerHTML = rooms.map(room => {
+            let eq = [];
+            try {
+                eq = typeof room.equipment === 'string' ? JSON.parse(room.equipment || '[]') : (room.equipment || []);
+            } catch (e) {
+                eq = [];
+            }
+            const roomType = this.normalizeRoomType(room);
+            const isActive = this.normalizeDbFlag(room.is_active);
+            const equipment = eq.length ? eq.slice(0, 3).join(' / ') : '未填写';
+            return `<article class="mobile-admin-card">
+                <div class="mobile-card-head">
+                    <div>
+                        <div class="mobile-card-title">${this.escapeHtml(room.name || '-')}</div>
+                        <div class="mobile-card-meta">${this.escapeHtml(room.floor || '-')} · ${this.escapeHtml(room.location || '-')}</div>
+                    </div>
+                    <span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '启用' : '停用'}</span>
+                </div>
+                <div class="mobile-card-grid">
+                    <div class="mobile-card-field">类型<strong>${roomType === 'vip' ? 'VIP室' : this.escapeHtml(this.getRoomTypeLabel(roomType))}</strong></div>
+                    <div class="mobile-card-field">容量<strong>${this.escapeHtml(room.capacity || 0)}人</strong></div>
+                    <div class="mobile-card-field">设备<strong>${this.escapeHtml(equipment)}</strong></div>
+                    <div class="mobile-card-field">状态<strong>${isActive ? '可预订' : '已停用'}</strong></div>
+                </div>
+                <div class="mobile-card-actions">
+                    <button class="admin-action-btn admin-action-edit" onclick="app.editRoom(${room.id})">编辑</button>
+                    <button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteRoom(${room.id})">删除</button>
+                </div>
+            </article>`;
+        }).join('');
+    },
+
     async renderAdminUserTable() {
         const tbody = document.getElementById('adminUserTableBody');
         if (!tbody) return;
@@ -999,8 +1040,10 @@ const app = {
             this.adminUsers = users;
         } catch (e) {
             tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px">加载失败</td></tr>';
+            this.renderAdminUserCards([]);
             return;
         }
+        this.renderAdminUserCards(users);
         if (users.length === 0) {
             tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text-secondary)">暂无用户</td></tr>';
             return;
@@ -1031,6 +1074,46 @@ const app = {
                 <button class="admin-action-btn admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
                 ${canDelete ? `<button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
             </div></td></tr>`;
+        }).join('');
+    },
+
+    renderAdminUserCards(users = []) {
+        const container = document.getElementById('adminUserCards');
+        if (!container) return;
+        if (!users.length) {
+            container.innerHTML = '<div class="mobile-admin-card"><div class="mobile-card-title">暂无用户</div><div class="mobile-card-meta">导入或搜索用户后会显示在这里</div></div>';
+            return;
+        }
+        container.innerHTML = users.map(user => {
+            const displayName = this.getUserDisplayName(user);
+            const canDelete = user.role !== 'admin' || user.id !== this.currentUser?.id;
+            const isActive = this.normalizeDbFlag(user.is_active);
+            return `<article class="mobile-admin-card">
+                <div class="mobile-card-head">
+                    <div>
+                        <div class="mobile-card-title">${this.escapeHtml(user.name || '-')}</div>
+                        <div class="mobile-card-meta">${this.escapeHtml(displayName)} · ${this.escapeHtml(user.phone || '-')}</div>
+                    </div>
+                    <span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '正常' : '禁用'}</span>
+                </div>
+                <div class="mobile-card-grid">
+                    <div class="mobile-card-field">地区<strong>${this.escapeHtml(user.region || '-')}</strong></div>
+                    <div class="mobile-card-field">组别<strong>${this.escapeHtml(user.group_name || user.groupName || '-')}</strong></div>
+                    <div class="mobile-card-field">权限<strong>${this.escapeHtml(this.formatBookingPermissions(user.booking_permissions))}</strong></div>
+                    <div class="mobile-card-field">每日上限<strong>${this.escapeHtml(this.formatDailyBookingLimit(user.daily_booking_limit_minutes))}</strong></div>
+                </div>
+                <div class="mobile-card-actions">
+                    <select class="role-select" onchange="app.changeUserRole(${user.id}, this.value)">
+                        <option value="normal" ${user.role === 'normal' ? 'selected' : ''}>普通员工</option>
+                        <option value="premium" ${user.role === 'premium' ? 'selected' : ''}>高级员工</option>
+                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理员</option>
+                    </select>
+                    <button class="admin-action-btn admin-action-edit" onclick="app.editUser(${user.id})">编辑</button>
+                    <button class="admin-action-btn admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
+                    <button class="admin-action-btn admin-action-reset" onclick="app.resetUserPassword(${user.id})">重置密码</button>
+                    ${canDelete ? `<button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
+                </div>
+            </article>`;
         }).join('');
     },
 
@@ -1247,29 +1330,14 @@ const app = {
         const periodEl = document.getElementById('reportPeriod');
         if (periodEl) periodEl.textContent = `${this.currentReportPeriod.year}年${this.currentReportPeriod.month}月`;
         this.renderReportKpis();
+        this.renderReportInsightStrip();
+        this.renderReportAttendeeInsight();
 
-        const getCount = item => Number(item.booking_count ?? item.total_bookings ?? item.count ?? 0);
-        const renderRanking = (container, title, items, labelBuilder, barColor = 'var(--primary)') => {
-            if (!container) return;
-            const rankedItems = items.filter(item => getCount(item) > 0);
-            if (rankedItems.length === 0) {
-                container.innerHTML = `<div class="report-card-title">${title}</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>`;
-                return;
-            }
-            const max = Math.max(...rankedItems.map(getCount));
-            container.innerHTML = `<div class="report-card-title">${title}</div><div class="chart-container">${rankedItems.slice(0, 10).map((item, i) => {
-                const count = getCount(item);
-                return `<div class="chart-row"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${count / max * 100}%;background:${barColor}"></div><span class="chart-value">${count}次</span></div></div>`;
-            }).join('')}</div>`;
-        };
-
-        const roomContainer = document.getElementById('roomUsageChart');
         const rooms = this.reportData.roomUsage || this.reportData.rooms || [];
-        renderRanking(roomContainer, '会议室使用排行', rooms, room => `${room.name || room.room_name || '-'} · ${this.getRoomTypeLabel(room)}`);
+        this.renderReportRanking(document.getElementById('roomUsageChart'), '会议室使用排行', rooms, room => `${room.name || room.room_name || '-'} · ${this.getRoomTypeLabel(room)}`);
 
-        const userContainer = document.getElementById('userUsageChart');
         const users = this.reportData.userUsage || this.reportData.users || [];
-        renderRanking(userContainer, '用户使用排行', users, user => {
+        this.renderReportRanking(document.getElementById('userUsageChart'), '用户使用排行', users, user => {
             const profile = [user.region, user.group_name || user.groupName, user.english_name || user.englishName, user.last_name || user.lastName]
                 .map(part => String(part || '').trim())
                 .filter(Boolean)
@@ -1278,23 +1346,50 @@ const app = {
         }, 'linear-gradient(90deg,#4A90D9,#357ABD)');
 
         const bookings = this.reportData.bookingUsage || this.reportData.bookingReports || this.reportData.bookings || [];
-        renderRanking(document.getElementById('reportPurposeChart'), '用途分布', bookings, booking => `${booking.title || '-'} · ${this.getRoomTypeLabel(booking.room_type || booking)}`, 'linear-gradient(90deg,#31BFA6,#1D9B87)');
-        renderRanking(document.getElementById('bookingUsageChart'), '预订排行', bookings, booking => booking.title || booking.room_name || booking.roomName || booking.date || booking.booking_date || '-');
+        this.renderReportRanking(document.getElementById('reportPurposeChart'), '用途分布', bookings, booking => `${booking.title || '-'} · ${this.getRoomTypeLabel(booking.room_type || booking)}`, 'linear-gradient(90deg,#31BFA6,#1D9B87)');
+        this.renderReportRanking(document.getElementById('bookingUsageChart'), '预订排行', bookings, booking => booking.title || booking.room_name || booking.roomName || booking.date || booking.booking_date || '-');
+        this.renderReportRanking(document.getElementById('reportRoomTypeChart'), '房型占比', this.reportData.roomTypeUsage || [], item => this.getRoomTypeLabel(item.room_type || item), 'linear-gradient(90deg,#E5C983,#9C7B3C)');
+        this.renderReportRanking(document.getElementById('reportRegionChart'), '地区排行', this.reportData.regionUsage || [], item => item.region || '未填写', 'linear-gradient(90deg,#8FBFE8,#4A90D9)');
+        this.renderReportRanking(document.getElementById('reportGroupChart'), '组别排行', this.reportData.groupUsage || [], item => item.group_name || item.groupName || '未填写', 'linear-gradient(90deg,#C7A6FF,#7F62FF)');
+        this.renderReportTimeHeatmap();
         this.renderReportTrend();
+    },
+
+    getReportCount(item) {
+        return Number(item?.booking_count ?? item?.total_bookings ?? item?.count ?? 0);
+    },
+
+    renderReportRanking(container, title, items, labelBuilder, barColor = 'var(--primary)') {
+        if (!container) return;
+        const rankedItems = (items || []).filter(item => this.getReportCount(item) > 0);
+        if (rankedItems.length === 0) {
+            container.innerHTML = `<div class="report-card-title">${title}</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>`;
+            return;
+        }
+        const max = Math.max(...rankedItems.map(item => this.getReportCount(item)));
+        container.innerHTML = `<div class="report-card-title">${title}</div><div class="chart-container">${rankedItems.slice(0, 10).map((item, i) => {
+            const count = this.getReportCount(item);
+            const minutes = Number(item.total_minutes || 0);
+            const hoursText = minutes > 0 ? ` · ${Math.round(minutes / 60 * 10) / 10}h` : '';
+            return `<div class="chart-row"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${count / max * 100}%;background:${barColor}"></div><span class="chart-value">${count}次${hoursText}</span></div></div>`;
+        }).join('')}</div>`;
     },
 
     renderReportKpis() {
         const container = document.getElementById('reportKpiGrid');
         if (!container || !this.reportData) return;
         const stats = this.reportData.totalStats || {};
+        const attendeeStats = this.reportData.attendeeStats || {};
         const countActive = items => (items || []).filter(item => Number(item.booking_count ?? item.total_bookings ?? item.count ?? 0) > 0).length;
         const activeUsers = stats.activeUsers ?? countActive(this.reportData.userUsage || this.reportData.users);
         const activeRooms = stats.activeRooms ?? countActive(this.reportData.roomUsage || this.reportData.rooms);
         const cards = [
             ['总预订', stats.totalBookings || 0, '当前月份确认预订'],
             ['总时长', `${stats.totalHours || 0}h`, `平均 ${stats.avgDuration || 0} 分钟`],
+            ['参与人数', stats.totalAttendees || attendeeStats.totalAttendees || 0, `单场平均 ${stats.avgAttendees || attendeeStats.avgAttendees || 0} 人`],
             ['活跃用户', activeUsers || 0, '有预订记录的用户'],
-            ['使用房间', activeRooms || 0, stats.peakDay ? `峰值 ${stats.peakDay}` : '当前月份']
+            ['使用房间', activeRooms || 0, stats.peakDay ? `峰值 ${stats.peakDay}` : '当前月份'],
+            ['热门时段', stats.peakHour || '-', '按开始时间统计']
         ];
         container.innerHTML = cards.map(([label, value, sub]) => `
             <div class="report-kpi-card">
@@ -1303,6 +1398,58 @@ const app = {
                 <div class="report-kpi-sub">${this.escapeHtml(sub)}</div>
             </div>
         `).join('');
+    },
+
+    renderReportInsightStrip() {
+        const container = document.getElementById('reportInsightStrip');
+        if (!container || !this.reportData) return;
+        const stats = this.reportData.totalStats || {};
+        const attendeeStats = this.reportData.attendeeStats || {};
+        const insights = [
+            ['峰值日期', stats.peakDay || '暂无', '当天所有房间合计'],
+            ['峰值时段', stats.peakHour || '暂无', '按预订开始时间'],
+            ['最大单场', `${attendeeStats.maxAttendees || stats.maxAttendees || 0}人`, '客户填写人数']
+        ];
+        container.innerHTML = insights.map(([label, value, sub]) => `
+            <div class="report-insight-item">
+                <div class="report-card-subtitle">${this.escapeHtml(label)}</div>
+                <div class="report-insight-value">${this.escapeHtml(value)}</div>
+                <div class="report-kpi-sub">${this.escapeHtml(sub)}</div>
+            </div>
+        `).join('');
+    },
+
+    renderReportAttendeeInsight() {
+        const container = document.getElementById('reportAttendeeInsight');
+        if (!container || !this.reportData) return;
+        const stats = this.reportData.attendeeStats || this.reportData.totalStats || {};
+        container.innerHTML = `<div class="report-card-title">参与人数洞察</div>
+            <div class="mobile-card-grid">
+                <div class="mobile-card-field">总参与<strong>${this.escapeHtml(stats.totalAttendees || 0)}人</strong></div>
+                <div class="mobile-card-field">单场平均<strong>${this.escapeHtml(stats.avgAttendees || 0)}人</strong></div>
+                <div class="mobile-card-field">最大单场<strong>${this.escapeHtml(stats.maxAttendees || 0)}人</strong></div>
+                <div class="mobile-card-field">数据来源<strong>客户填写</strong></div>
+            </div>`;
+    },
+
+    renderReportTimeHeatmap() {
+        const container = document.getElementById('reportTimeHeatmapChart');
+        if (!container || !this.reportData) return;
+        const hourlyUsage = this.reportData.hourlyUsage || [];
+        const countByHour = new Map(hourlyUsage.map(item => [Number(item.hour), this.getReportCount(item)]));
+        const max = Math.max(0, ...Array.from(countByHour.values()));
+        const hours = Array.from({ length: 12 }, (_, index) => index + 8);
+        container.innerHTML = `<div class="report-card-title">热门时段热力</div>
+            <div class="report-card-subtitle">08:00-20:00 办公预约时段</div>
+            <div class="report-hour-grid">${hours.map(hour => {
+                const count = countByHour.get(hour) || 0;
+                const hot = max > 0 && count >= Math.max(1, Math.ceil(max * 0.6));
+                return `<div class="report-hour-cell ${hot ? 'hot' : ''}">
+                    <div class="report-hour-label">${String(hour).padStart(2, '0')}:00</div>
+                    <div class="report-hour-value">${count}</div>
+                    <div class="report-card-subtitle">次</div>
+                </div>`;
+            }).join('')}</div>`;
     },
 
     renderReportTrend() {

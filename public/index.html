@@ -2324,6 +2324,64 @@
             color: var(--text-primary);
         }
 
+        .report-crystal-hero {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.82);
+            border-radius: 22px;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.86), rgba(248,251,255,0.58)),
+                radial-gradient(circle at 92% 18%, rgba(229,201,131,0.28), transparent 36%);
+            box-shadow: var(--crystal-shadow-soft);
+            -webkit-backdrop-filter: blur(24px) saturate(175%);
+            backdrop-filter: blur(24px) saturate(175%);
+        }
+
+        .report-hero-title {
+            margin-top: 4px;
+            font-size: 26px;
+            font-weight: 850;
+            color: var(--text-primary);
+        }
+
+        .report-chip {
+            min-height: 36px;
+            padding: 8px 14px;
+            border: 1px solid rgba(201,169,110,0.26);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.66);
+            color: var(--gold-deep);
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
+        }
+
+        .report-insight-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .report-insight-item {
+            padding: 14px;
+            border: 1px solid rgba(255,255,255,0.74);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.56);
+            box-shadow: 0 12px 28px rgba(84,100,116,0.08);
+        }
+
+        .report-insight-value {
+            margin-top: 4px;
+            font-size: 18px;
+            font-weight: 850;
+            color: var(--text-primary);
+        }
+
         .report-kpi-grid,
         .report-dashboard-grid {
             display: grid;
@@ -2342,6 +2400,20 @@
             border-radius: 18px;
             padding: 16px;
             box-shadow: var(--crystal-shadow-soft);
+        }
+
+        .report-kpi-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-kpi-card::after {
+            content: "";
+            position: absolute;
+            inset: auto 14px 0 14px;
+            height: 3px;
+            border-radius: 999px 999px 0 0;
+            background: linear-gradient(90deg, rgba(229,201,131,0.9), rgba(156,123,60,0.5));
         }
 
         .report-kpi-value {
@@ -2367,7 +2439,7 @@
             display: flex;
             align-items: end;
             gap: 4px;
-            min-height: 116px;
+            height: 116px;
             padding-top: 12px;
         }
 
@@ -2418,6 +2490,106 @@
             color: rgba(24,33,43,0.7);
         }
 
+        .report-hour-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .report-hour-cell {
+            min-height: 58px;
+            padding: 9px 8px;
+            border-radius: 14px;
+            border: 1px solid rgba(201,169,110,0.16);
+            background: rgba(255,255,255,0.5);
+            color: var(--text-secondary);
+        }
+
+        .report-hour-cell.hot {
+            background: linear-gradient(135deg, rgba(229,201,131,0.9), rgba(201,169,110,0.66));
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(156,123,60,0.18);
+        }
+
+        .report-hour-label {
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .report-hour-value {
+            margin-top: 4px;
+            font-size: 16px;
+            font-weight: 850;
+        }
+
+        .admin-mobile-card-list {
+            display: none;
+        }
+
+        .mobile-admin-card {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.78);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.7);
+            box-shadow: var(--crystal-shadow-soft);
+        }
+
+        .mobile-card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .mobile-card-title {
+            font-size: 15px;
+            font-weight: 850;
+            color: var(--text-primary);
+        }
+
+        .mobile-card-meta {
+            margin-top: 3px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .mobile-card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .mobile-card-field {
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(248,251,255,0.66);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .mobile-card-field strong {
+            display: block;
+            margin-top: 2px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .mobile-card-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .mobile-card-actions .admin-action-btn,
+        .mobile-card-actions .role-select {
+            width: 100%;
+            min-height: 38px;
+            justify-content: center;
+        }
+
         @media (min-width: 769px) {
             body {
                 background:
@@ -2455,6 +2627,44 @@
             }
             .report-card.wide {
                 grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .report-crystal-hero {
+                align-items: stretch;
+                flex-direction: column;
+                border-radius: 18px;
+                padding: 16px;
+            }
+            .report-hero-title {
+                font-size: 22px;
+            }
+            .report-period-controls,
+            .report-export-actions {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .report-period-controls .report-chip,
+            .report-export-actions .btn-primary {
+                width: 100% !important;
+            }
+            .report-insight-strip {
+                grid-template-columns: 1fr;
+            }
+            .report-hour-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            .admin-table-wrap {
+                display: none;
+            }
+            .admin-mobile-card-list {
+                display: grid;
+                gap: 12px;
+            }
+            .admin-tab-content {
+                overflow: visible;
             }
         }
 </style>
@@ -2703,7 +2913,8 @@
                         </div>
                         <div id="adminTab-rooms" class="admin-tab-content active">
                             <div style="text-align:right;margin-bottom:12px;"><button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.showRoomEditModal()">+ 新建会议室</button></div>
-                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>名称</th><th>类型</th><th>容量</th><th>楼层</th><th>位置</th><th>设备</th><th>状态</th><th>操作</th></tr></thead><tbody id="adminRoomTableBody"></tbody></table></div>
+                            <div class="admin-mobile-card-list" id="adminRoomCards"></div>
+                            <div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>名称</th><th>类型</th><th>容量</th><th>楼层</th><th>位置</th><th>设备</th><th>状态</th><th>操作</th></tr></thead><tbody id="adminRoomTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-users" class="admin-tab-content">
                             <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
@@ -2718,24 +2929,32 @@
                                     <button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.importUsersFromText()">导入文本</button>
                                 </div>
                             </div>
-                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>英文名</th><th>手机</th><th>角色</th><th>地区</th><th>组别</th><th>权限</th><th>每日上限</th><th>状态</th><th>重置密码</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
+                            <div class="admin-mobile-card-list" id="adminUserCards"></div>
+                            <div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>英文名</th><th>手机</th><th>角色</th><th>地区</th><th>组别</th><th>权限</th><th>每日上限</th><th>状态</th><th>重置密码</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-reports" class="admin-tab-content">
-                            <div class="report-toolbar">
+                            <div class="report-crystal-hero">
                                 <div>
-                                    <div class="report-card-subtitle">数据看板</div>
+                                    <div class="report-card-subtitle">数据驾驶舱</div>
+                                    <div class="report-hero-title">会议室运营概览</div>
                                     <div id="reportPeriod" class="report-period-label"></div>
                                 </div>
                                 <div class="report-period-controls">
-                                    <button class="admin-action-btn" type="button" onclick="app.changeReportMonth(-1)">上月</button>
-                                    <button class="admin-action-btn" type="button" onclick="app.changeReportMonth(1)">下月</button>
+                                    <button class="report-chip" type="button" onclick="app.changeReportMonth(-1)">上月</button>
+                                    <button class="report-chip" type="button" onclick="app.changeReportMonth(1)">下月</button>
                                 </div>
                             </div>
+                            <div class="report-insight-strip" id="reportInsightStrip"></div>
                             <div class="report-kpi-grid" id="reportKpiGrid"></div>
                             <div class="report-dashboard-grid" id="reportDashboardGrid">
+                                <div class="report-card" id="reportAttendeeInsight"></div>
                                 <div class="report-card" id="roomUsageChart"></div>
                                 <div class="report-card" id="userUsageChart"></div>
+                                <div class="report-card" id="reportRoomTypeChart"></div>
                                 <div class="report-card" id="reportPurposeChart"></div>
+                                <div class="report-card" id="reportRegionChart"></div>
+                                <div class="report-card" id="reportGroupChart"></div>
+                                <div class="report-card wide" id="reportTimeHeatmapChart"></div>
                                 <div class="report-card" id="bookingUsageChart"></div>
                                 <div class="report-card wide" id="reportDailyTrendChart"></div>
                             </div>

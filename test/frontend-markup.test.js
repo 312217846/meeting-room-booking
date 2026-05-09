@@ -107,11 +107,35 @@ test('admin page exposes V2 user and room administration anchors', () => {
 test('admin reports expose responsive dashboard anchors and export controls', () => {
     assert.match(html, /reportDashboardGrid/);
     assert.match(html, /reportKpiGrid/);
+    assert.match(html, /reportInsightStrip/);
     assert.match(html, /reportExportToolbar/);
     assert.match(html, /reportDailyTrendChart/);
     assert.match(html, /reportPurposeChart/);
+    assert.match(html, /reportRoomTypeChart/);
+    assert.match(html, /reportRegionChart/);
+    assert.match(html, /reportGroupChart/);
+    assert.match(html, /reportTimeHeatmapChart/);
+    assert.match(html, /reportAttendeeInsight/);
+    assert.match(html, /report-crystal-hero/);
+    assert.match(html, /report-chip/);
+    assert.match(appJs, /roomTypeUsage/);
+    assert.match(appJs, /regionUsage/);
+    assert.match(appJs, /groupUsage/);
+    assert.match(appJs, /hourlyUsage/);
+    assert.match(appJs, /attendeeStats/);
     assert.match(appJs, /renderReportKpis/);
     assert.match(appJs, /renderReportTrend/);
+});
+
+test('admin room and user management expose mobile card interactions', () => {
+    assert.match(html, /adminRoomCards/);
+    assert.match(html, /adminUserCards/);
+    assert.match(html, /admin-mobile-card-list/);
+    assert.match(html, /admin-table-wrap/);
+    assert.match(appJs, /renderAdminRoomCards/);
+    assert.match(appJs, /renderAdminUserCards/);
+    assert.match(appJs, /mobile-admin-card/);
+    assert.match(appJs, /mobile-card-actions/);
 });
 
 test('admin controls normalize database boolean flags from MySQL values', () => {

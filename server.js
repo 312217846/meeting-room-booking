@@ -1505,6 +1505,69 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
             LIMIT 20
         `, [startDate, endDate]);
 
+        const [roomTypeUsage] = await pool.execute(`
+            SELECT r.room_type,
+                   COUNT(b.id) as booking_count,
+                   SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes,
+                   SUM(COALESCE(b.attendee_count, 0)) as total_attendees
+            FROM meeting_rooms r
+            LEFT JOIN bookings b ON r.id = b.room_id
+                AND b.status = 'confirmed'
+                AND b.booking_date >= ? AND b.booking_date < ?
+            WHERE r.is_active = TRUE
+            GROUP BY r.room_type
+            ORDER BY booking_count DESC, total_minutes DESC
+        `, [startDate, endDate]);
+
+        const [regionUsage] = await pool.execute(`
+            SELECT COALESCE(NULLIF(u.region, ''), '未填写') as region,
+                   COUNT(b.id) as booking_count,
+                   SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes,
+                   SUM(COALESCE(b.attendee_count, 0)) as total_attendees
+            FROM bookings b
+            LEFT JOIN users u ON b.user_id = u.userid
+            WHERE b.status = 'confirmed'
+                AND b.booking_date >= ? AND b.booking_date < ?
+            GROUP BY COALESCE(NULLIF(u.region, ''), '未填写')
+            ORDER BY booking_count DESC, total_minutes DESC
+            LIMIT 12
+        `, [startDate, endDate]);
+
+        const [groupUsage] = await pool.execute(`
+            SELECT COALESCE(NULLIF(u.group_name, ''), '未填写') as group_name,
+                   COUNT(b.id) as booking_count,
+                   SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes,
+                   SUM(COALESCE(b.attendee_count, 0)) as total_attendees
+            FROM bookings b
+            LEFT JOIN users u ON b.user_id = u.userid
+            WHERE b.status = 'confirmed'
+                AND b.booking_date >= ? AND b.booking_date < ?
+            GROUP BY COALESCE(NULLIF(u.group_name, ''), '未填写')
+            ORDER BY booking_count DESC, total_minutes DESC
+            LIMIT 12
+        `, [startDate, endDate]);
+
+        const [hourlyUsage] = await pool.execute(`
+            SELECT HOUR(b.start_time) as hour,
+                   COUNT(*) as booking_count,
+                   SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes,
+                   SUM(COALESCE(b.attendee_count, 0)) as total_attendees
+            FROM bookings b
+            WHERE b.status = 'confirmed'
+                AND b.booking_date >= ? AND b.booking_date < ?
+            GROUP BY HOUR(b.start_time)
+            ORDER BY hour
+        `, [startDate, endDate]);
+
+        const [[attendeeStats]] = await pool.execute(`
+            SELECT SUM(COALESCE(b.attendee_count, 0)) as total_attendees,
+                   AVG(NULLIF(b.attendee_count, 0)) as avg_attendees,
+                   MAX(COALESCE(b.attendee_count, 0)) as max_attendees
+            FROM bookings b
+            WHERE b.status = 'confirmed'
+                AND b.booking_date >= ? AND b.booking_date < ?
+        `, [startDate, endDate]);
+
         const activeUsers = userUsage.filter(row => Number(row.booking_count || 0) > 0).length;
         const activeRooms = roomUsage.filter(row => Number(row.booking_count || 0) > 0).length;
         const peakDayRow = dailyTrend.reduce((peak, row) => (
@@ -1512,6 +1575,12 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
         ), {});
         const peakDay = peakDayRow.booking_date
             ? `${formatReportDateValue(peakDayRow.booking_date)} ${peakDayRow.booking_count}次`
+            : '';
+        const peakHourRow = hourlyUsage.reduce((peak, row) => (
+            Number(row.booking_count || 0) > Number(peak.booking_count || 0) ? row : peak
+        ), {});
+        const peakHour = peakHourRow.hour !== undefined && peakHourRow.hour !== null
+            ? `${String(peakHourRow.hour).padStart(2, '0')}:00 ${peakHourRow.booking_count}次`
             : '';
         
         res.json({
@@ -1521,15 +1590,28 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
                 roomUsage,
                 userUsage,
                 bookingUsage,
+                roomTypeUsage,
+                regionUsage,
+                groupUsage,
+                hourlyUsage,
+                attendeeStats: {
+                    totalAttendees: attendeeStats.total_attendees || 0,
+                    avgAttendees: Math.round(Number(attendeeStats.avg_attendees || 0) * 10) / 10,
+                    maxAttendees: attendeeStats.max_attendees || 0
+                },
                 dailyTrend,
                 weeklyTrend,
                 totalStats: {
                     totalBookings: totalStats.total_bookings || 0,
                     totalHours: Math.round((totalStats.total_minutes || 0) / 60 * 10) / 10,
                     avgDuration: Math.round((totalStats.avg_minutes || 0)) || 0,
+                    totalAttendees: attendeeStats.total_attendees || 0,
+                    avgAttendees: Math.round(Number(attendeeStats.avg_attendees || 0) * 10) / 10,
+                    maxAttendees: attendeeStats.max_attendees || 0,
                     activeUsers,
                     activeRooms,
-                    peakDay
+                    peakDay,
+                    peakHour
                 }
             }
         });
