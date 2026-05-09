@@ -4,6 +4,14 @@ const cors = require('cors');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const { normalizeHongKongPhone } = require('./src/phone');
+const { parseUserImportText } = require('./src/userImport');
+const { ensureV2Schema } = require('./src/schema');
+const {
+    buildUserSearchQuery,
+    buildImportedUserRecord,
+    disableUserAndCancelFutureBookings
+} = require('./src/userService');
 require('dotenv').config();
 
 const app = express();
@@ -50,8 +58,11 @@ async function initDatabase() {
         
         // 3. 创建表
         await createTables();
+
+        // 4. 补齐 V2 字段和默认配置
+        await ensureV2Schema(pool);
         
-        // 4. 初始化默认数据
+        // 5. 初始化默认数据
         await initDefaultData();
         
         console.log('✅ 数据库初始化完成');
@@ -166,21 +177,22 @@ async function initDefaultData() {
     
     if (rows[0].count === 0) {
         const defaultRooms = [
-            { name: '木星会议室', capacity: 20, floor: '3F', location: '3楼东侧', equipment: ['投影仪', '白板', '音响'], is_vip: false },
-            { name: '火星会议室', capacity: 12, floor: '3F', location: '3楼西侧', equipment: ['投影仪', '白板', '电视'], is_vip: false },
-            { name: '水星会议室', capacity: 6, floor: '2F', location: '2楼西侧', equipment: ['电视', '白板'], is_vip: false },
-            { name: '金星VIP会议室', capacity: 20, floor: '1F', location: '1楼东侧', equipment: ['4K投影', '视频会议', '电子白板'], is_vip: true },
-            { name: '土星VIP会议室', capacity: 40, floor: '1F', location: '1楼大厅', equipment: ['舞台', '音响', '麦克风', '4K投影'], is_vip: true }
+            { name: '木星会议室', capacity: 20, floor: '3F', location: '3楼东侧', equipment: ['投影仪', '白板', '音响'], is_vip: false, room_type: 'normal' },
+            { name: '火星会议室', capacity: 12, floor: '3F', location: '3楼西侧', equipment: ['投影仪', '白板', '电视'], is_vip: false, room_type: 'normal' },
+            { name: '水星会议室', capacity: 6, floor: '2F', location: '2楼西侧', equipment: ['电视', '白板'], is_vip: false, room_type: 'normal' },
+            { name: '培训会议室', capacity: 30, floor: '2F', location: '2楼东侧', equipment: ['投影仪', '白板', '无线麦克风'], is_vip: false, room_type: 'training' },
+            { name: '金星VIP会议室', capacity: 20, floor: '1F', location: '1楼东侧', equipment: ['4K投影', '视频会议', '电子白板'], is_vip: true, room_type: 'vip' },
+            { name: '土星VIP会议室', capacity: 40, floor: '1F', location: '1楼大厅', equipment: ['舞台', '音响', '麦克风', '4K投影'], is_vip: true, room_type: 'vip' }
         ];
         
         for (const room of defaultRooms) {
             await pool.execute(
-                `INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, is_vip, sort_order) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [room.name, room.capacity, room.floor, room.location, JSON.stringify(room.equipment), room.is_vip, 0]
+                `INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, is_vip, room_type, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [room.name, room.capacity, room.floor, room.location, JSON.stringify(room.equipment), room.is_vip, room.room_type, 0]
             );
         }
-        console.log('✅ 已插入 5 条默认会议室数据');
+        console.log('✅ 已插入 6 条默认会议室数据');
     } else {
         console.log(`✅ 会议室数据已存在 (${rows[0].count} 条)`);
     }
@@ -234,6 +246,65 @@ function generateAvatar(name) {
     return name.charAt(0).toUpperCase();
 }
 
+function normalizeBookingPermissions(value) {
+    if (Array.isArray(value)) return value.length > 0 ? value : ['normal'];
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed : ['normal'];
+        } catch (error) {
+            return ['normal'];
+        }
+    }
+    return ['normal'];
+}
+
+function serializeBookingPermissions(value) {
+    return JSON.stringify(normalizeBookingPermissions(value));
+}
+
+function normalizeGender(value) {
+    return ['male', 'female'].includes(value) ? value : null;
+}
+
+function toBoolean(value, fallback = true) {
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+    return Boolean(value);
+}
+
+function getTodayDateString() {
+    const today = new Date();
+    return [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0')
+    ].join('-');
+}
+
+function buildSessionUser(user) {
+    return {
+        id: user.id,
+        userid: user.userid,
+        name: user.name,
+        avatar: user.avatar || generateAvatar(user.name),
+        phone: user.phone || null,
+        role: user.role,
+        gender: user.gender || null,
+        email: user.email || null,
+        english_name: user.english_name || null,
+        last_name: user.last_name || null,
+        region: user.region || null,
+        group_name: user.group_name || null,
+        booking_permissions: normalizeBookingPermissions(user.booking_permissions),
+        daily_booking_limit_minutes: user.daily_booking_limit_minutes || 180,
+        is_active: toBoolean(user.is_active, true),
+        wechat_avatar: user.wechat_avatar || null
+    };
+}
+
 // ========== 认证接口 ==========
 
 // 检查是否为第一个用户
@@ -250,10 +321,9 @@ app.post('/api/auth/register', async (req, res) => {
         return res.status(400).json({ code: 400, message: '手机号、密码和姓名不能为空' });
     }
     
-    // 验证手机号格式
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-        return res.status(400).json({ code: 400, message: '手机号格式不正确' });
+    const normalizedPhone = normalizeHongKongPhone(phone);
+    if (!normalizedPhone) {
+        return res.status(400).json({ code: 400, message: '手机号必须是香港手机号' });
     }
     
     // 验证密码长度
@@ -265,7 +335,7 @@ app.post('/api/auth/register', async (req, res) => {
         // 检查手机号是否已注册
         const [existingUsers] = await pool.execute(
             'SELECT * FROM users WHERE phone = ?',
-            [phone]
+            [normalizedPhone]
         );
         
         if (existingUsers.length > 0) {
@@ -280,23 +350,41 @@ app.post('/api/auth/register', async (req, res) => {
         const passwordHash = await bcrypt.hash(password, 10);
         const userid = generateUserId();
         const avatar = generateAvatar(name);
+        const bookingPermissions = ['normal'];
+        const dailyBookingLimitMinutes = 180;
         
         // 创建用户
         const [result] = await pool.execute(
-            `INSERT INTO users (userid, name, avatar, phone, password_hash, gender, role, created_at, last_login_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-            [userid, name, avatar, phone, passwordHash, gender || null, role]
+            `INSERT INTO users (
+                userid, name, avatar, phone, password_hash, gender, role,
+                booking_permissions, daily_booking_limit_minutes, is_active,
+                created_at, last_login_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), NOW())`,
+            [
+                userid,
+                name,
+                avatar,
+                normalizedPhone,
+                passwordHash,
+                normalizeGender(gender),
+                role,
+                JSON.stringify(bookingPermissions),
+                dailyBookingLimitMinutes
+            ]
         );
         
-        const user = {
+        const user = buildSessionUser({
             id: result.insertId,
-            userid: userid,
-            name: name,
-            avatar: avatar,
-            phone: phone,
-            role: role,
-            gender: gender || null
-        };
+            userid,
+            name,
+            avatar,
+            phone: normalizedPhone,
+            role,
+            gender: normalizeGender(gender),
+            booking_permissions: bookingPermissions,
+            daily_booking_limit_minutes: dailyBookingLimitMinutes,
+            is_active: true
+        });
         
         // 设置session
         req.session.user = user;
@@ -322,11 +410,16 @@ app.post('/api/auth/login', async (req, res) => {
     if (!phone || !password) {
         return res.status(400).json({ code: 400, message: '手机号和密码不能为空' });
     }
+
+    const normalizedPhone = normalizeHongKongPhone(phone);
+    if (!normalizedPhone) {
+        return res.status(400).json({ code: 400, message: '手机号必须是香港手机号' });
+    }
     
     try {
         const [users] = await pool.execute(
             'SELECT * FROM users WHERE phone = ?',
-            [phone]
+            [normalizedPhone]
         );
         
         if (users.length === 0) {
@@ -340,6 +433,10 @@ app.post('/api/auth/login', async (req, res) => {
         if (!validPassword) {
             return res.status(401).json({ code: 401, message: '手机号或密码错误' });
         }
+
+        if (!toBoolean(user.is_active, true)) {
+            return res.status(403).json({ code: 403, message: '账号已停用，请联系管理员' });
+        }
         
         // 更新登录时间
         await pool.execute(
@@ -347,16 +444,7 @@ app.post('/api/auth/login', async (req, res) => {
             [user.id]
         );
         
-        const userInfo = {
-            id: user.id,
-            userid: user.userid,
-            name: user.name,
-            avatar: user.avatar || generateAvatar(user.name),
-            phone: user.phone,
-            role: user.role,
-            gender: user.gender,
-            wechat_avatar: user.wechat_avatar
-        };
+        const userInfo = buildSessionUser(user);
         
         // 设置session
         req.session.user = userInfo;
@@ -433,6 +521,9 @@ app.get('/api/auth/wx-callback', async (req, res) => {
         if (existingUsers.length > 0) {
             // 已存在，更新登录时间
             user = existingUsers[0];
+            if (!toBoolean(user.is_active, true)) {
+                return res.status(403).json({ code: 403, message: '账号已停用，请联系管理员' });
+            }
             await pool.execute(
                 'UPDATE users SET last_login_at = NOW(), wechat_avatar = ? WHERE id = ?',
                 [headimgurl, user.id]
@@ -444,9 +535,22 @@ app.get('/api/auth/wx-callback', async (req, res) => {
             const role = firstUser ? 'admin' : 'normal';
             
             const [result] = await pool.execute(
-                `INSERT INTO users (userid, name, avatar, wechat_openid, wechat_unionid, wechat_avatar, gender, role, created_at, last_login_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-                [userid, nickname, nickname.charAt(0).toUpperCase(), openid, unionid || null, headimgurl, sex === 1 ? 'male' : sex === 2 ? 'female' : null, role]
+                `INSERT INTO users (
+                    userid, name, avatar, wechat_openid, wechat_unionid, wechat_avatar,
+                    gender, role, booking_permissions, daily_booking_limit_minutes, is_active,
+                    created_at, last_login_at
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 180, TRUE, NOW(), NOW())`,
+                [
+                    userid,
+                    nickname,
+                    nickname.charAt(0).toUpperCase(),
+                    openid,
+                    unionid || null,
+                    headimgurl,
+                    sex === 1 ? 'male' : sex === 2 ? 'female' : null,
+                    role,
+                    JSON.stringify(['normal'])
+                ]
             );
             
             user = {
@@ -458,20 +562,17 @@ app.get('/api/auth/wx-callback', async (req, res) => {
                 wechat_unionid: unionid,
                 wechat_avatar: headimgurl,
                 gender: sex === 1 ? 'male' : sex === 2 ? 'female' : null,
-                role: role
+                role: role,
+                booking_permissions: ['normal'],
+                daily_booking_limit_minutes: 180,
+                is_active: true
             };
         }
         
-        const userData = {
-            id: user.id,
-            userid: user.userid,
-            name: user.name,
-            avatar: user.avatar,
-            phone: user.phone || null,
-            role: user.role,
-            gender: user.gender,
+        const userData = buildSessionUser({
+            ...user,
             wechat_avatar: headimgurl || user.wechat_avatar
-        };
+        });
         
         // 设置session
         req.session.user = userData;
@@ -822,14 +923,100 @@ app.put('/api/bookings/:id/cancel', requireAuth, async (req, res) => {
 // 获取用户列表（管理员）
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
-        const [users] = await pool.execute(
-            'SELECT id, userid, name, avatar, department, role, phone, email, gender, created_at, last_login_at FROM users ORDER BY created_at DESC'
-        );
+        const query = buildUserSearchQuery(req.query.search);
+        const [users] = await pool.execute(query.sql, query.params);
         res.json({ code: 0, data: users });
     } catch (error) {
         console.error('获取用户列表失败:', error);
         res.status(500).json({ code: 500, message: '获取用户列表失败' });
     }
+});
+
+// 批量导入用户（管理员）
+app.post('/api/admin/users/import', requireAdmin, async (req, res) => {
+    const { text } = req.body;
+
+    if (typeof text !== 'string') {
+        return res.status(400).json({ code: 400, message: '导入内容不能为空' });
+    }
+
+    const parsed = parseUserImportText(text);
+    const errors = [...parsed.errors];
+    let created = 0;
+    let updated = 0;
+
+    for (let index = 0; index < parsed.rows.length; index += 1) {
+        const row = parsed.rows[index];
+        const rowNumber = index + 2;
+
+        try {
+            const record = buildImportedUserRecord(row);
+            if (!record.phone) {
+                errors.push({ rowNumber, message: '手机号必须是香港手机号' });
+                continue;
+            }
+
+            const [existingUsers] = await pool.execute('SELECT id FROM users WHERE phone = ?', [record.phone]);
+
+            if (existingUsers.length === 0) {
+                const passwordHash = await bcrypt.hash(record.phone, 10);
+                await pool.execute(
+                    `INSERT INTO users (
+                        userid, name, avatar, phone, password_hash, role,
+                        english_name, last_name, region, group_name,
+                        booking_permissions, daily_booking_limit_minutes, is_active,
+                        created_at
+                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    [
+                        record.userid,
+                        record.name,
+                        record.avatar,
+                        record.phone,
+                        passwordHash,
+                        record.role,
+                        record.english_name,
+                        record.last_name,
+                        record.region,
+                        record.group_name,
+                        record.booking_permissions,
+                        record.daily_booking_limit_minutes,
+                        record.is_active
+                    ]
+                );
+                created += 1;
+            } else {
+                await pool.execute(
+                    `UPDATE users SET
+                        name = ?, avatar = ?, role = ?,
+                        english_name = ?, last_name = ?, region = ?, group_name = ?,
+                        booking_permissions = ?, daily_booking_limit_minutes = ?, is_active = ?
+                     WHERE phone = ?`,
+                    [
+                        record.name,
+                        record.avatar,
+                        record.role,
+                        record.english_name,
+                        record.last_name,
+                        record.region,
+                        record.group_name,
+                        record.booking_permissions,
+                        record.daily_booking_limit_minutes,
+                        record.is_active,
+                        record.phone
+                    ]
+                );
+                updated += 1;
+            }
+        } catch (error) {
+            errors.push({ rowNumber, message: error.message });
+        }
+    }
+
+    res.json({
+        code: 0,
+        data: { created, updated, errors },
+        message: errors.length > 0 ? '导入完成，部分行存在错误' : '导入成功'
+    });
 });
 
 // 更新用户角色（管理员）
@@ -848,14 +1035,84 @@ app.put('/api/admin/users/:id/role', requireAdmin, async (req, res) => {
 
 // 更新用户信息（管理员）
 app.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
-    const { name, phone, role, gender } = req.body;
+    const {
+        name,
+        phone,
+        role,
+        gender,
+        english_name,
+        last_name,
+        region,
+        group_name,
+        booking_permissions,
+        daily_booking_limit_minutes,
+        is_active
+    } = req.body;
     const userId = req.params.id;
     
     try {
-        await pool.execute(
-            'UPDATE users SET name = ?, phone = ?, role = ?, gender = ? WHERE id = ?',
-            [name, phone, role, gender, userId]
-        );
+        const normalizedPhone = normalizeHongKongPhone(phone);
+        if (!normalizedPhone) {
+            return res.status(400).json({ code: 400, message: '手机号必须是香港手机号' });
+        }
+
+        const [users] = await pool.execute('SELECT id, is_active FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({ code: 404, message: '用户不存在' });
+        }
+
+        const targetActive = toBoolean(is_active, toBoolean(users[0].is_active, true));
+        if (!targetActive && parseInt(userId) === req.session.user.id) {
+            return res.status(400).json({ code: 400, message: '不能禁用当前登录用户' });
+        }
+
+        const dailyLimit = Number.isInteger(Number(daily_booking_limit_minutes))
+            ? Number(daily_booking_limit_minutes)
+            : 180;
+        const connection = await pool.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            if (!targetActive && toBoolean(users[0].is_active, true)) {
+                await disableUserAndCancelFutureBookings(
+                    connection,
+                    userId,
+                    req.session.user.userid,
+                    getTodayDateString()
+                );
+            }
+
+            await connection.execute(
+                `UPDATE users SET
+                    name = ?, phone = ?, role = ?, gender = ?,
+                    english_name = ?, last_name = ?, region = ?, group_name = ?,
+                    booking_permissions = ?, daily_booking_limit_minutes = ?, is_active = ?
+                 WHERE id = ?`,
+                [
+                    name,
+                    normalizedPhone,
+                    role,
+                    normalizeGender(gender),
+                    english_name || null,
+                    last_name || null,
+                    region || null,
+                    group_name || null,
+                    serializeBookingPermissions(booking_permissions),
+                    dailyLimit,
+                    targetActive,
+                    userId
+                ]
+            );
+
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+
         res.json({ code: 0, message: '更新成功' });
     } catch (error) {
         console.error('更新用户信息失败:', error);
@@ -897,10 +1154,23 @@ app.put('/api/admin/users/:id/toggle-active', requireAdmin, async (req, res) => 
             return res.status(404).json({ code: 404, message: '用户不存在' });
         }
         
-        const newStatus = !users[0].is_active;
-        await pool.execute('UPDATE users SET is_active = ? WHERE id = ?', [newStatus, userId]);
+        const newStatus = !toBoolean(users[0].is_active, true);
+        let message;
+
+        if (newStatus) {
+            await pool.execute('UPDATE users SET is_active = TRUE WHERE id = ?', [userId]);
+            message = '已启用';
+        } else {
+            const result = await disableUserAndCancelFutureBookings(
+                pool,
+                userId,
+                req.session.user.userid,
+                getTodayDateString()
+            );
+            message = result.message || '已禁用';
+        }
         
-        res.json({ code: 0, data: { is_active: newStatus }, message: newStatus ? '已启用' : '已禁用' });
+        res.json({ code: 0, data: { is_active: newStatus }, message });
     } catch (error) {
         console.error('切换用户状态失败:', error);
         res.status(500).json({ code: 500, message: '操作失败' });
