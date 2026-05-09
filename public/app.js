@@ -102,9 +102,10 @@ const app = {
         const hour = Number(match[1]);
         const minute = Number(match[2]);
         const second = Number(match[3] || 0);
+        if (second !== 0) return null;
         if (hour === 24 && minute === 0 && second === 0) return 24 * 60;
         if (hour < 0 || hour > 23) return null;
-        return hour * 60 + minute + second / 60;
+        return hour * 60 + minute;
     },
 
     minutesToTime(minutes) {

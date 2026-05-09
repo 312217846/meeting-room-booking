@@ -68,9 +68,10 @@ test('booking controls normalize API time values and enforce contiguous slots', 
     const app = loadFrontendApp();
     assert.equal(app.timeToMinutes('08:30'), 510);
     assert.equal(app.timeToMinutes('08:30:00'), 510);
-    assert.equal(app.timeToMinutes('08:30:30'), 510.5);
+    assert.equal(app.timeToMinutes('08:30:30'), null);
     assert.equal(app.timeToMinutes('24:00'), 1440);
     assert.equal(app.timeToMinutes('24:00:00'), 1440);
+    assert.equal(app.timeToMinutes('24:00:01'), null);
     assert.equal(app.getEndTime('23:30'), '24:00');
     assert.equal(app.isSlotOccupied('08:30', { startTime: '08:00:00', endTime: '09:00:00' }), true);
     assert.equal(app.isSlotOccupied('09:00', { startTime: '08:00:00', endTime: '09:00:00' }), false);
