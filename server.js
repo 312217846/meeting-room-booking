@@ -61,6 +61,7 @@ async function initDatabase() {
 
         // 4. 补齐 V2 字段和默认配置
         await ensureV2Schema(pool);
+        await alignRuntimeV2Schema();
         
         // 5. 初始化默认数据
         await initDefaultData();
@@ -71,6 +72,10 @@ async function initDatabase() {
         console.error('❌ 数据库初始化失败:', error.message);
         return false;
     }
+}
+
+async function alignRuntimeV2Schema() {
+    await pool.execute("ALTER TABLE users MODIFY COLUMN gender ENUM('unknown', 'male', 'female') DEFAULT 'unknown'");
 }
 
 // 创建表
@@ -84,7 +89,7 @@ async function createTables() {
             avatar VARCHAR(10) DEFAULT NULL,
             phone VARCHAR(20) UNIQUE DEFAULT NULL,
             password_hash VARCHAR(255) DEFAULT NULL,
-            gender ENUM('male', 'female') DEFAULT NULL,
+            gender ENUM('unknown', 'male', 'female') DEFAULT 'unknown',
             department VARCHAR(100) DEFAULT NULL,
             role ENUM('normal', 'premium', 'admin') DEFAULT 'normal',
             is_active BOOLEAN DEFAULT TRUE,
@@ -217,24 +222,6 @@ app.use(session({
     }
 }));
 
-// 登录验证中间件
-function requireAuth(req, res, next) {
-    if (req.session && req.session.user) {
-        next();
-    } else {
-        res.status(401).json({ code: 401, message: '请先登录' });
-    }
-}
-
-// 管理员验证中间件
-function requireAdmin(req, res, next) {
-    if (req.session && req.session.user && req.session.user.role === 'admin') {
-        next();
-    } else {
-        res.status(403).json({ code: 403, message: '需要管理员权限' });
-    }
-}
-
 // 生成用户ID
 function generateUserId() {
     return 'USER' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 5).toUpperCase();
@@ -264,7 +251,7 @@ function serializeBookingPermissions(value) {
 }
 
 function normalizeGender(value) {
-    return ['male', 'female'].includes(value) ? value : null;
+    return ['male', 'female'].includes(value) ? value : 'unknown';
 }
 
 function toBoolean(value, fallback = true) {
@@ -292,7 +279,7 @@ function buildSessionUser(user) {
         avatar: user.avatar || generateAvatar(user.name),
         phone: user.phone || null,
         role: user.role,
-        gender: user.gender || null,
+        gender: normalizeGender(user.gender),
         email: user.email || null,
         english_name: user.english_name || null,
         last_name: user.last_name || null,
@@ -303,6 +290,75 @@ function buildSessionUser(user) {
         is_active: toBoolean(user.is_active, true),
         wechat_avatar: user.wechat_avatar || null
     };
+}
+
+function isDuplicateKeyError(error) {
+    return error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062);
+}
+
+async function refreshActiveSessionUser(req, res) {
+    if (!req.session || !req.session.user) {
+        res.status(401).json({ code: 401, message: '请先登录' });
+        return false;
+    }
+
+    const sessionUser = req.session.user;
+    const lookupSql = sessionUser.id
+        ? 'SELECT * FROM users WHERE id = ?'
+        : 'SELECT * FROM users WHERE userid = ?';
+    const lookupParam = sessionUser.id || sessionUser.userid;
+
+    if (!lookupParam) {
+        req.session.destroy(() => {});
+        res.status(401).json({ code: 401, message: '请先登录' });
+        return false;
+    }
+
+    const [users] = await pool.execute(lookupSql, [lookupParam]);
+    if (users.length === 0) {
+        req.session.destroy(() => {});
+        res.status(401).json({ code: 401, message: '账号不存在，请重新登录' });
+        return false;
+    }
+
+    if (!toBoolean(users[0].is_active, true)) {
+        req.session.destroy(() => {});
+        res.status(403).json({ code: 403, message: '账号已停用，请联系管理员' });
+        return false;
+    }
+
+    req.session.user = buildSessionUser(users[0]);
+    return true;
+}
+
+// 登录验证中间件
+async function requireAuth(req, res, next) {
+    try {
+        if (await refreshActiveSessionUser(req, res)) {
+            next();
+        }
+    } catch (error) {
+        console.error('验证登录状态失败:', error);
+        res.status(500).json({ code: 500, message: '验证登录状态失败' });
+    }
+}
+
+// 管理员验证中间件
+async function requireAdmin(req, res, next) {
+    try {
+        if (!(await refreshActiveSessionUser(req, res))) {
+            return;
+        }
+
+        if (req.session.user.role === 'admin') {
+            next();
+        } else {
+            res.status(403).json({ code: 403, message: '需要管理员权限' });
+        }
+    } catch (error) {
+        console.error('验证管理员权限失败:', error);
+        res.status(500).json({ code: 500, message: '验证管理员权限失败' });
+    }
 }
 
 // ========== 认证接口 ==========
@@ -398,6 +454,9 @@ app.post('/api/auth/register', async (req, res) => {
             message: firstUser ? '注册成功，您已成为系统管理员' : '注册成功' 
         });
     } catch (error) {
+        if (isDuplicateKeyError(error)) {
+            return res.status(400).json({ code: 400, message: '该手机号已注册' });
+        }
         console.error('注册失败:', error);
         res.status(500).json({ code: 500, message: '注册失败: ' + error.message });
     }
@@ -547,7 +606,7 @@ app.get('/api/auth/wx-callback', async (req, res) => {
                     openid,
                     unionid || null,
                     headimgurl,
-                    sex === 1 ? 'male' : sex === 2 ? 'female' : null,
+                    normalizeGender(sex === 1 ? 'male' : sex === 2 ? 'female' : null),
                     role,
                     JSON.stringify(['normal'])
                 ]
@@ -561,7 +620,7 @@ app.get('/api/auth/wx-callback', async (req, res) => {
                 wechat_openid: openid,
                 wechat_unionid: unionid,
                 wechat_avatar: headimgurl,
-                gender: sex === 1 ? 'male' : sex === 2 ? 'female' : null,
+                gender: normalizeGender(sex === 1 ? 'male' : sex === 2 ? 'female' : null),
                 role: role,
                 booking_permissions: ['normal'],
                 daily_booking_limit_minutes: 180,
@@ -1061,6 +1120,14 @@ app.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
             return res.status(404).json({ code: 404, message: '用户不存在' });
         }
 
+        const [phoneUsers] = await pool.execute(
+            'SELECT id FROM users WHERE phone = ? AND id <> ?',
+            [normalizedPhone, userId]
+        );
+        if (phoneUsers.length > 0) {
+            return res.status(400).json({ code: 400, message: '该手机号已注册' });
+        }
+
         const targetActive = toBoolean(is_active, toBoolean(users[0].is_active, true));
         if (!targetActive && parseInt(userId) === req.session.user.id) {
             return res.status(400).json({ code: 400, message: '不能禁用当前登录用户' });
@@ -1115,6 +1182,9 @@ app.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
 
         res.json({ code: 0, message: '更新成功' });
     } catch (error) {
+        if (isDuplicateKeyError(error)) {
+            return res.status(400).json({ code: 400, message: '该手机号已注册' });
+        }
         console.error('更新用户信息失败:', error);
         res.status(500).json({ code: 500, message: '更新用户信息失败' });
     }
