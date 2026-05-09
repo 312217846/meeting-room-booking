@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   hasRoomTypePermission,
   minutesBetween,
+  normalizeRoomType,
   rangesOverlap,
   validateBookingInput,
   wouldExceedDailyLimit
@@ -12,6 +13,13 @@ test('checks room-type permissions independently from system role', () => {
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal'] }, { room_type: 'normal' }), true);
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal'] }, { room_type: 'vip' }), false);
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal', 'training'] }, { room_type: 'training' }), true);
+});
+
+test('normalizes room type to supported values with legacy VIP fallback', () => {
+  assert.equal(normalizeRoomType({ room_type: 'training', is_vip: true }), 'training');
+  assert.equal(normalizeRoomType({ room_type: 'unsupported', is_vip: true }), 'vip');
+  assert.equal(normalizeRoomType({ room_type: 'unsupported', is_vip: false }), 'normal');
+  assert.equal(normalizeRoomType({ is_vip: true }), 'vip');
 });
 
 test('calculates 24-hour booking minutes and detects overlaps', () => {

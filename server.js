@@ -740,19 +740,21 @@ app.get('/api/rooms/:id', requireAuth, async (req, res) => {
 
 // 创建会议室（管理员）
 app.post('/api/rooms', requireAdmin, async (req, res) => {
-    const { name, capacity, floor, location, equipment, images, description, is_vip, sort_order } = req.body;
+    const { name, capacity, floor, location, equipment, images, description, sort_order } = req.body;
+    const roomType = normalizeRoomType(req.body);
+    const isVip = roomType === 'vip';
     
     try {
         const [result] = await pool.execute(
-            `INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, images, description, is_vip, sort_order, created_by) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, capacity, floor, location, JSON.stringify(equipment || []), JSON.stringify(images || []), description, is_vip || false, sort_order || 0, req.session.user.userid]
+            `INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, images, description, room_type, is_vip, sort_order, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, capacity, floor, location, JSON.stringify(equipment || []), JSON.stringify(images || []), description, roomType, isVip, sort_order || 0, req.session.user.userid]
         );
         
         // 记录操作日志
         await pool.execute(
             `INSERT INTO operation_logs (user_id, action, target_type, target_id, new_value) VALUES (?, 'create', 'room', ?, ?)`,
-            [req.session.user.userid, result.insertId, JSON.stringify(req.body)]
+            [req.session.user.userid, result.insertId, JSON.stringify({ ...req.body, room_type: roomType, is_vip: isVip })]
         );
         
         res.json({ code: 0, data: { id: result.insertId }, message: '创建成功' });
@@ -764,7 +766,9 @@ app.post('/api/rooms', requireAdmin, async (req, res) => {
 
 // 更新会议室（管理员）
 app.put('/api/rooms/:id', requireAdmin, async (req, res) => {
-    const { name, capacity, floor, location, equipment, images, description, is_vip, is_active, sort_order } = req.body;
+    const { name, capacity, floor, location, equipment, images, description, is_active, sort_order } = req.body;
+    const roomType = normalizeRoomType(req.body);
+    const isVip = roomType === 'vip';
     const roomId = req.params.id;
     
     try {
@@ -778,15 +782,15 @@ app.put('/api/rooms/:id', requireAdmin, async (req, res) => {
             `UPDATE meeting_rooms SET 
                 name = ?, capacity = ?, floor = ?, location = ?, 
                 equipment = ?, images = ?, description = ?, 
-                is_vip = ?, is_active = ?, sort_order = ?
+                room_type = ?, is_vip = ?, is_active = ?, sort_order = ?
              WHERE id = ?`,
-            [name, capacity, floor, location, JSON.stringify(equipment || []), JSON.stringify(images || []), description, is_vip, is_active, sort_order, roomId]
+            [name, capacity, floor, location, JSON.stringify(equipment || []), JSON.stringify(images || []), description, roomType, isVip, is_active, sort_order, roomId]
         );
         
         // 记录操作日志
         await pool.execute(
             `INSERT INTO operation_logs (user_id, action, target_type, target_id, old_value, new_value) VALUES (?, 'update', 'room', ?, ?, ?)`,
-            [req.session.user.userid, roomId, JSON.stringify(oldRooms[0]), JSON.stringify(req.body)]
+            [req.session.user.userid, roomId, JSON.stringify(oldRooms[0]), JSON.stringify({ ...req.body, room_type: roomType, is_vip: isVip })]
         );
         
         res.json({ code: 0, message: '更新成功' });
@@ -1451,6 +1455,28 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
             ORDER BY week DESC
             LIMIT 12
         `, [endDate, endDate]);
+
+        const [bookingUsage] = await pool.execute(`
+            SELECT b.title, r.room_type,
+                   COUNT(*) as booking_count,
+                   SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes,
+                   SUM(COALESCE(b.attendee_count, 0)) as total_attendees,
+                   MAX(b.booking_date) as latest_booking_date,
+                   SUBSTRING_INDEX(GROUP_CONCAT(r.name ORDER BY b.booking_date DESC, b.start_time DESC SEPARATOR '||'), '||', 1) as room_name,
+                   SUBSTRING_INDEX(GROUP_CONCAT(u.name ORDER BY b.booking_date DESC, b.start_time DESC SEPARATOR '||'), '||', 1) as user_name,
+                   SUBSTRING_INDEX(GROUP_CONCAT(u.english_name ORDER BY b.booking_date DESC, b.start_time DESC SEPARATOR '||'), '||', 1) as english_name,
+                   SUBSTRING_INDEX(GROUP_CONCAT(u.last_name ORDER BY b.booking_date DESC, b.start_time DESC SEPARATOR '||'), '||', 1) as last_name,
+                   SUBSTRING_INDEX(GROUP_CONCAT(u.region ORDER BY b.booking_date DESC, b.start_time DESC SEPARATOR '||'), '||', 1) as region,
+                   SUBSTRING_INDEX(GROUP_CONCAT(u.group_name ORDER BY b.booking_date DESC, b.start_time DESC SEPARATOR '||'), '||', 1) as group_name
+            FROM bookings b
+            JOIN meeting_rooms r ON b.room_id = r.id
+            LEFT JOIN users u ON b.user_id = u.userid
+            WHERE b.status = 'confirmed'
+                AND b.booking_date >= ? AND b.booking_date < ?
+            GROUP BY b.title, r.room_type
+            ORDER BY booking_count DESC, total_minutes DESC
+            LIMIT 20
+        `, [startDate, endDate]);
         
         res.json({
             code: 0,
@@ -1458,6 +1484,7 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
                 period: { year, month, startDate, endDate },
                 roomUsage,
                 userUsage,
+                bookingUsage,
                 dailyTrend,
                 weeklyTrend,
                 totalStats: {

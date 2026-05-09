@@ -12,7 +12,8 @@ function parsePermissions(value) {
 }
 
 function normalizeRoomType(room) {
-  if (room && room.room_type) return room.room_type;
+  const roomType = typeof room === 'string' ? room : room && room.room_type;
+  if (['normal', 'training', 'vip'].includes(roomType)) return roomType;
   return room && room.is_vip ? 'vip' : 'normal';
 }
 
