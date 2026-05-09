@@ -69,6 +69,19 @@ test('admin page exposes V2 user and room administration anchors', () => {
     assert.match(appJs, /resetUserPassword/);
 });
 
+test('admin controls normalize database boolean flags from MySQL values', () => {
+    assert.match(appJs, /normalizeDbFlag/);
+    assert.doesNotMatch(appJs, /is_active !== false/);
+
+    const app = loadFrontendApp();
+    assert.equal(app.normalizeDbFlag(false), false);
+    assert.equal(app.normalizeDbFlag(0), false);
+    assert.equal(app.normalizeDbFlag('0'), false);
+    assert.equal(app.normalizeDbFlag('false'), false);
+    assert.equal(app.normalizeDbFlag(undefined), true);
+    assert.equal(app.normalizeDbFlag(1), true);
+});
+
 test('booking controls normalize API time values and enforce contiguous slots', () => {
     assert.match(appJs, /timeToMinutes/);
     assert.match(appJs, /isSlotOccupied/);

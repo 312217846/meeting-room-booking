@@ -777,6 +777,9 @@ app.put('/api/rooms/:id', requireAdmin, async (req, res) => {
         if (oldRooms.length === 0) {
             return res.status(404).json({ code: 404, message: '会议室不存在' });
         }
+        const sortOrder = sort_order === undefined || sort_order === null
+            ? (oldRooms[0].sort_order ?? 0)
+            : sort_order;
         
         await pool.execute(
             `UPDATE meeting_rooms SET 
@@ -784,7 +787,7 @@ app.put('/api/rooms/:id', requireAdmin, async (req, res) => {
                 equipment = ?, images = ?, description = ?, 
                 room_type = ?, is_vip = ?, is_active = ?, sort_order = ?
              WHERE id = ?`,
-            [name, capacity, floor, location, JSON.stringify(equipment || []), JSON.stringify(images || []), description, roomType, isVip, is_active, sort_order, roomId]
+            [name, capacity, floor, location, JSON.stringify(equipment || []), JSON.stringify(images || []), description, roomType, isVip, is_active, sortOrder, roomId]
         );
         
         // 记录操作日志

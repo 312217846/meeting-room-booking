@@ -12,6 +12,12 @@ test('room admin create and update persist normalized room_type with is_vip comp
   assert.match(serverJs, /UPDATE meeting_rooms SET[\s\S]*room_type = \?[\s\S]*is_vip = \?/);
 });
 
+test('room admin update preserves sort_order when omitted from the UI payload', () => {
+  assert.match(serverJs, /const sortOrder = sort_order === undefined \|\| sort_order === null/);
+  assert.match(serverJs, /oldRooms\[0\]\.sort_order \?\? 0/);
+  assert.match(serverJs, /roomType, isVip, is_active, sortOrder, roomId/);
+});
+
 test('admin reports response includes booking usage ranking data', () => {
   assert.match(serverJs, /const \[bookingUsage\] = await pool\.execute/);
   assert.match(serverJs, /bookingUsage/);

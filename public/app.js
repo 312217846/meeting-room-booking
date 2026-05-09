@@ -136,8 +136,16 @@ const app = {
     normalizeRoomType(roomOrType) {
         const value = typeof roomOrType === 'string'
             ? roomOrType
-            : (roomOrType?.room_type || roomOrType?.type || (roomOrType?.is_vip ? 'vip' : 'normal'));
+            : (roomOrType?.room_type || roomOrType?.type || (this.normalizeDbFlag(roomOrType?.is_vip, false) ? 'vip' : 'normal'));
         return Object.prototype.hasOwnProperty.call(ROOM_TYPE_LABELS, value) ? value : 'normal';
+    },
+
+    normalizeDbFlag(value, fallback = true) {
+        if (value === undefined || value === null) return fallback;
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'number') return value !== 0;
+        if (typeof value === 'string') return !['0', 'false', 'no', 'off'].includes(value.trim().toLowerCase());
+        return Boolean(value);
     },
 
     parseBookingPermissions(value) {
@@ -955,9 +963,10 @@ const app = {
             const eq = typeof room.equipment === 'string' ? JSON.parse(room.equipment || '[]') : (room.equipment || []);
             const eqStr = eq.slice(0, 3).join(', ') + (eq.length > 3 ? '...' : '');
             const roomType = this.normalizeRoomType(room);
+            const isActive = this.normalizeDbFlag(room.is_active);
             return `<tr class="room-table-row">
                 <td><strong>${room.name}</strong></td><td>${roomType === 'vip' ? '<span class="vip-badge-small">VIP</span>' : this.getRoomTypeLabel(roomType)}</td><td>${room.capacity}人</td><td>${room.floor || '-'}</td><td>${room.location || '-'}</td><td>${eqStr}</td>
-                <td><span class="status-badge ${room.is_active ? 'active' : 'inactive'}">${room.is_active ? '启用' : '停用'}</span></td>
+                <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '启用' : '停用'}</span></td>
                 <td class="room-table-actions"><button class="btn-edit" onclick="app.editRoom(${room.id})">编辑</button><button class="btn-delete" onclick="app.confirmDeleteRoom(${room.id})">删除</button></td></tr>`;
         }).join('');
     },
@@ -983,7 +992,7 @@ const app = {
             const displayName = this.getUserDisplayName(user);
             const avatarText = user.avatar || String(user.name || displayName || '?').charAt(0);
             const canDelete = user.role !== 'admin' || user.id !== this.currentUser?.id;
-            const isActive = user.is_active !== false;
+            const isActive = this.normalizeDbFlag(user.is_active);
             return `<tr>
             <td><div class="user-table-avatar">${this.escapeHtml(avatarText)}</div></td>
             <td><strong>${this.escapeHtml(user.name || '-')}</strong></td>
@@ -1020,7 +1029,7 @@ const app = {
             const roomType = room ? this.normalizeRoomType(room) : 'normal';
             document.getElementById('roomEditType').value = roomType;
             document.getElementById('roomEditIsVip').checked = roomType === 'vip';
-            document.getElementById('roomEditIsActive').checked = room ? (room.is_active !== false) : true;
+            document.getElementById('roomEditIsActive').checked = room ? this.normalizeDbFlag(room.is_active) : true;
             modal.style.display = 'flex';
         } catch(e) { alert('弹窗错误: ' + e.message); }
     },
@@ -1118,7 +1127,7 @@ const app = {
             return;
         }
 
-        const activeValue = promptValue('是否启用（true/false）', user.is_active !== false ? 'true' : 'false');
+        const activeValue = promptValue('是否启用（true/false）', this.normalizeDbFlag(user.is_active) ? 'true' : 'false');
         if (activeValue === null) return;
         data.is_active = !['false', '0', 'no', '否', '禁用'].includes(activeValue.toLowerCase());
 
