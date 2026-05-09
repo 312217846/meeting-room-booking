@@ -4,9 +4,9 @@ function buildUserSearchQuery(search) {
   const base = `SELECT id, userid, name, avatar, english_name, last_name, region, group_name, department, role, phone, email, gender, booking_permissions, daily_booking_limit_minutes, is_active, created_at, last_login_at FROM users`;
   const term = String(search || '').trim();
   if (!term) return { sql: `${base} ORDER BY created_at DESC`, params: [] };
-  const sql = `${base} WHERE english_name LIKE ? OR last_name LIKE ? OR phone LIKE ? OR region LIKE ? OR group_name LIKE ? ORDER BY created_at DESC`;
+  const sql = `${base} WHERE userid LIKE ? OR name LIKE ? OR phone LIKE ? OR english_name LIKE ? OR last_name LIKE ? OR region LIKE ? OR group_name LIKE ? OR role LIKE ? ORDER BY created_at DESC`;
   const like = `%${term}%`;
-  return { sql, params: [like, like, like, like, like] };
+  return { sql, params: [like, like, like, like, like, like, like, like] };
 }
 
 function buildImportedUserRecord(row) {

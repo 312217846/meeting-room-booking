@@ -8,12 +8,24 @@ const {
 
 test('builds user search across profile fields', () => {
   const query = buildUserSearchQuery('Ada');
+  assert.match(query.sql, /userid LIKE/);
+  assert.match(query.sql, /name LIKE/);
+  assert.match(query.sql, /phone LIKE/);
   assert.match(query.sql, /english_name LIKE/);
   assert.match(query.sql, /last_name LIKE/);
-  assert.match(query.sql, /phone LIKE/);
   assert.match(query.sql, /region LIKE/);
   assert.match(query.sql, /group_name LIKE/);
-  assert.deepEqual(query.params, ['%Ada%', '%Ada%', '%Ada%', '%Ada%', '%Ada%']);
+  assert.match(query.sql, /role LIKE/);
+  assert.deepEqual(query.params, [
+    '%Ada%',
+    '%Ada%',
+    '%Ada%',
+    '%Ada%',
+    '%Ada%',
+    '%Ada%',
+    '%Ada%',
+    '%Ada%'
+  ]);
 });
 
 test('maps imported user to database record with phone as initial password source', () => {
