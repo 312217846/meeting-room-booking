@@ -1719,7 +1719,8 @@
             font-weight: 600;
             letter-spacing: 0;
         }
-        .pmagic-powered .pmagic-mark {
+        .pmagic-powered .pmagic-mark,
+        .pmagic-powered .pmagic-source-mark {
             width: 18px;
             height: 18px;
             flex: 0 0 auto;
@@ -2198,6 +2199,59 @@
             color: var(--text-secondary);
         }
 
+        .purpose-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .purpose-option {
+            position: relative;
+            min-width: 0;
+        }
+
+        .purpose-option input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .purpose-option span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(201,169,110,0.28);
+            background: rgba(255,255,255,0.72);
+            color: var(--gold-deep);
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.84);
+            transition: all 0.2s ease;
+        }
+
+        .purpose-option input:checked + span {
+            background: linear-gradient(135deg, #E5C983 0%, #C9A96E 52%, #9C7B3C 100%);
+            border-color: rgba(255,255,255,0.64);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(156,123,60,0.2), inset 0 1px 0 rgba(255,255,255,0.36);
+        }
+
+        .attendee-count-input {
+            max-width: 220px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .attendee-helper {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
         .admin-action-group {
             display: flex;
             align-items: center;
@@ -2397,9 +2451,28 @@
                 grid-column: 1 / -1;
             }
         }
-    </style>
+</style>
 </head>
 <body>
+    <svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden">
+        <symbol id="pmagic-source-logo-symbol" viewBox="0 0 800 800">
+            <rect x="391.817" y="150" width="93.1152" height="423.259" fill="#6B4FFF"></rect>
+            <rect x="650" y="315.072" width="93.1169" height="423.251" transform="rotate(90 650 315.072)" fill="#6B4FFF"></rect>
+            <path d="M555.096 179.053L620.938 244.896L215.842 650L149.999 584.156L555.096 179.053Z" fill="url(#pmagicSourcePaint0)"></path>
+            <path d="M255.813 244.898L321.656 179.055L620.939 478.344L555.097 544.187L255.813 244.898Z" fill="url(#pmagicSourcePaint1)"></path>
+            <rect width="93.1169" height="92.9973" transform="matrix(0.7071 -0.707113 0.7071 0.707113 372.205 361.857)" fill="white"></rect>
+        </symbol>
+        <defs>
+            <linearGradient id="pmagicSourcePaint0" x1="588.017" y1="211.975" x2="182.913" y2="617.071" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FF66D4"></stop>
+                <stop offset="0.980769" stop-color="#FFED09"></stop>
+            </linearGradient>
+            <linearGradient id="pmagicSourcePaint1" x1="287.498" y1="225.001" x2="583.332" y2="504.163" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FF66D4"></stop>
+                <stop offset="1" stop-color="#FF97E2"></stop>
+            </linearGradient>
+        </defs>
+    </svg>
     <div id="app">
         <!-- 登录页 -->
         <div id="loginPage" class="login-page">
@@ -2425,12 +2498,8 @@
                 </div>
             </div>
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
-                <svg class="pmagic-mark" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
-                    <rect x="15" y="1" width="6" height="34" rx="2" fill="#7F62FF"></rect>
-                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(45 18 18)" fill="#F4D44D"></rect>
-                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(-45 18 18)" fill="#EA70B6"></rect>
-                    <rect x="1" y="15" width="34" height="6" rx="2" fill="#6A4DF5"></rect>
-                    <circle cx="18" cy="18" r="4" fill="#FF9C5A"></circle>
+                <svg class="pmagic-source-mark" viewBox="0 0 800 800" aria-hidden="true" focusable="false">
+                    <use href="#pmagic-source-logo-symbol"></use>
                 </svg>
                 <span class="powered-text">Powered by</span>
                 <span class="pmagic-name">PMagic AI</span>
@@ -2564,18 +2633,19 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">预订用途 *</label>
-                                <div class="gender-group">
-                                    <label><input type="radio" name="bookingPurpose" value="见客" checked> 见客</label>
-                                    <label><input type="radio" name="bookingPurpose" value="招募"> 招募</label>
-                                    <label><input type="radio" name="bookingPurpose" value="培训"> 培训</label>
-                                    <label><input type="radio" name="bookingPurpose" value="讲座"> 讲座</label>
-                                    <label><input type="radio" name="bookingPurpose" value="会议"> 会议</label>
-                                    <label><input type="radio" name="bookingPurpose" value="其他"> 其他</label>
+                                <div class="purpose-options" role="radiogroup" aria-label="预订用途">
+                                    <label class="purpose-option"><input type="radio" name="bookingPurpose" value="见客" checked><span>见客</span></label>
+                                    <label class="purpose-option"><input type="radio" name="bookingPurpose" value="招募"><span>招募</span></label>
+                                    <label class="purpose-option"><input type="radio" name="bookingPurpose" value="培训"><span>培训</span></label>
+                                    <label class="purpose-option"><input type="radio" name="bookingPurpose" value="讲座"><span>讲座</span></label>
+                                    <label class="purpose-option"><input type="radio" name="bookingPurpose" value="会议"><span>会议</span></label>
+                                    <label class="purpose-option"><input type="radio" name="bookingPurpose" value="其他"><span>其他</span></label>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">预计人数：<span id="bookingAttendeeCountValue">1</span></label>
-                                <input type="range" class="form-input" id="bookingAttendeeCount" min="1" max="200" value="1">
+                                <label class="form-label" for="bookingAttendeeCount">预计人数 *</label>
+                                <input type="number" class="form-input attendee-count-input" id="bookingAttendeeCount" min="1" max="200" value="1" inputmode="numeric" step="1" placeholder="填写人数">
+                                <div class="attendee-helper">当前填写：<span id="bookingAttendeeCountValue">1</span> 人</div>
                             </div>
                         </div>
 
@@ -2674,12 +2744,8 @@
                 </div>
             </div>
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
-                <svg class="pmagic-mark" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
-                    <rect x="15" y="1" width="6" height="34" rx="2" fill="#7F62FF"></rect>
-                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(45 18 18)" fill="#F4D44D"></rect>
-                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(-45 18 18)" fill="#EA70B6"></rect>
-                    <rect x="1" y="15" width="34" height="6" rx="2" fill="#6A4DF5"></rect>
-                    <circle cx="18" cy="18" r="4" fill="#FF9C5A"></circle>
+                <svg class="pmagic-source-mark" viewBox="0 0 800 800" aria-hidden="true" focusable="false">
+                    <use href="#pmagic-source-logo-symbol"></use>
                 </svg>
                 <span class="powered-text">Powered by</span>
                 <span class="pmagic-name">PMagic AI</span>
