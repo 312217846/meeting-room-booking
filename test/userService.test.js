@@ -49,3 +49,43 @@ test('disables user and cancels future confirmed bookings', async () => {
   assert.equal(calls.some(call => call.sql.includes('UPDATE users SET is_active = FALSE')), true);
   assert.equal(calls.some(call => call.sql.includes('UPDATE bookings SET status = "cancelled"')), true);
 });
+
+test('rolls back and releases transactional disable when booking cancellation fails', async () => {
+  const calls = [];
+  const cancellationError = new Error('booking update failed');
+  const fakeConnection = {
+    async beginTransaction() {
+      calls.push('begin');
+    },
+    async commit() {
+      calls.push('commit');
+    },
+    async rollback() {
+      calls.push('rollback');
+    },
+    release() {
+      calls.push('release');
+    },
+    async execute(sql) {
+      calls.push(sql);
+      if (sql.includes('SELECT id, userid')) return [[{ id: 7, userid: 'USER7', is_active: 1 }]];
+      if (sql.includes('UPDATE bookings SET status = "cancelled"')) throw cancellationError;
+      return [{ affectedRows: 1 }];
+    }
+  };
+  const fakePool = {
+    async getConnection() {
+      calls.push('getConnection');
+      return fakeConnection;
+    }
+  };
+
+  await assert.rejects(
+    () => disableUserAndCancelFutureBookings(fakePool, 7, 'ADMIN1', '2026-05-09'),
+    cancellationError
+  );
+
+  assert.equal(calls.includes('rollback'), true);
+  assert.equal(calls.includes('release'), true);
+  assert.equal(calls.includes('commit'), false);
+});

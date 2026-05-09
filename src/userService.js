@@ -27,17 +27,38 @@ function buildImportedUserRecord(row) {
   };
 }
 
-async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, today) {
-  const [users] = await pool.execute('SELECT id, userid, is_active FROM users WHERE id = ?', [userId]);
+async function disableUserAndCancelFutureBookingsWithExecutor(executor, userId, actorUserid, today) {
+  const [users] = await executor.execute('SELECT id, userid, is_active FROM users WHERE id = ?', [userId]);
   if (users.length === 0) return { disabled: false, message: '用户不存在' };
   if (!users[0].is_active) return { disabled: false, message: '用户已停用' };
 
-  await pool.execute('UPDATE users SET is_active = FALSE WHERE id = ?', [userId]);
-  await pool.execute(
+  await executor.execute('UPDATE users SET is_active = FALSE WHERE id = ?', [userId]);
+  await executor.execute(
     'UPDATE bookings SET status = "cancelled", cancelled_at = NOW(), cancelled_by = ? WHERE user_id = ? AND status = "confirmed" AND booking_date >= ?',
     [actorUserid, users[0].userid, today]
   );
   return { disabled: true, message: '已停用并释放未来预订' };
+}
+
+async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, today) {
+  if (typeof pool.getConnection !== 'function') {
+    return disableUserAndCancelFutureBookingsWithExecutor(pool, userId, actorUserid, today);
+  }
+
+  const connection = await pool.getConnection();
+  let began = false;
+  try {
+    await connection.beginTransaction();
+    began = true;
+    const result = await disableUserAndCancelFutureBookingsWithExecutor(connection, userId, actorUserid, today);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    if (began) await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 module.exports = { buildUserSearchQuery, buildImportedUserRecord, disableUserAndCancelFutureBookings };
