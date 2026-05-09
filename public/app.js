@@ -47,6 +47,8 @@ const API = {
 // ---- 全局会议室数据 ----
 let ROOMS_DATA = [];
 
+const BOOKING_PURPOSES = ['见客', '招募', '培训', '讲座', '会议', '其他'];
+
 // ---- 应用主对象（唯一入口） ----
 const app = {
     currentUser: null,
@@ -67,6 +69,7 @@ const app = {
         this.currentWeekStart = this.getWeekStart(new Date());
         await this.loadData();
         this.generateDates();
+        this.setupBookingAttendeeCountControl();
         this.updateSubmitButtonState();
         this.checkLoginStatus();
     },
@@ -115,12 +118,6 @@ const app = {
         document.getElementById('loginForm').style.display = 'block';
     },
 
-    showWechatLogin() { document.getElementById('wechatLoginModal').classList.add('show'); },
-
-    hideWechatLogin(event) {
-        if (!event || event.target === event.currentTarget) document.getElementById('wechatLoginModal').classList.remove('show');
-    },
-
     async handleLogin() {
         const phone = document.getElementById('loginPhone').value.trim();
         const password = document.getElementById('loginPassword').value;
@@ -151,7 +148,6 @@ const app = {
         const password = document.getElementById('regPassword').value;
         const gender = document.querySelector('input[name="gender"]:checked')?.value;
         if (!name || !phone || !password) { this.showToast('请填写完整信息', 'error'); return; }
-        if (!/^1[3-9]\d{9}$/.test(phone)) { this.showToast('手机号格式不正确', 'error'); return; }
         if (password.length < 6) { this.showToast('密码长度至少6位', 'error'); return; }
         try {
             const res = await API.register({ name, phone, password, gender });
@@ -166,36 +162,6 @@ const app = {
         } catch (error) {
             console.error('注册失败:', error);
             this.showToast('注册失败，请重试', 'error');
-        }
-    },
-
-    async startWxLogin() {
-        try {
-            const redirectUri = window.location.origin + '/wx-callback.html';
-            const res = await API.getWxAuthUrl(redirectUri);
-            if (res.code === 0) {
-                const wxWindow = window.open(res.data.authUrl, 'wx_login', 'width=600,height=600');
-                window.addEventListener('message', async (event) => {
-                    if (event.origin !== window.location.origin) return;
-                    if (event.data.type === 'wx_login_success') {
-                        wxWindow.close();
-                        const meRes = await API.getMe();
-                        if (meRes.code === 0) {
-                            this.currentUser = meRes.data;
-                            localStorage.setItem('currentUser', JSON.stringify(meRes.data));
-                            this.showToast('微信登录成功', 'success');
-                            await this.handleLoginSuccess(meRes.data);
-                        }
-                    } else if (event.data.type === 'wx_login_error') {
-                        this.showToast(event.data.message || '微信登录失败', 'error');
-                    }
-                });
-            } else {
-                this.showToast(res.message || '获取微信授权链接失败', 'error');
-            }
-        } catch (error) {
-            console.error('微信登录失败:', error);
-            this.showToast('微信登录失败', 'error');
         }
     },
 
@@ -230,6 +196,8 @@ const app = {
             this.renderAdminUserTable();
             this.updateStats();
         }
+
+        this.switchTab('booking');
     },
 
     // ==================== 数据加载 ====================
@@ -628,12 +596,36 @@ const app = {
         btn.disabled = !(this.selectedRoom && this.selectedDate && this.selectedTimeSlots.length > 0);
     },
 
+    setupBookingAttendeeCountControl() {
+        const input = document.getElementById('bookingAttendeeCount');
+        const value = document.getElementById('bookingAttendeeCountValue');
+        if (!input || !value || input.dataset.bound === 'true') return;
+
+        const syncValue = () => { value.textContent = input.value; };
+        syncValue();
+        input.addEventListener('input', syncValue);
+        input.dataset.bound = 'true';
+    },
+
+    resetBookingInfoControls() {
+        const defaultPurpose = document.querySelector('input[name="bookingPurpose"][value="见客"]') ||
+            document.querySelector('input[name="bookingPurpose"]');
+        if (defaultPurpose) defaultPurpose.checked = true;
+
+        const attendeeCount = document.getElementById('bookingAttendeeCount');
+        const attendeeCountValue = document.getElementById('bookingAttendeeCountValue');
+        if (attendeeCount) attendeeCount.value = '1';
+        if (attendeeCountValue) attendeeCountValue.textContent = attendeeCount?.value || '1';
+    },
+
     // ==================== 提交预订 ====================
     async submitBooking() {
         if (!this.selectedRoom) { this.showError('请选择会议室', '请先选择一个会议室'); return; }
         if (this.selectedTimeSlots.length === 0) { this.showError('请选择时间段', '请至少选择一个时间段'); return; }
-        const title = document.getElementById('bookingTitle').value.trim();
-        if (!title) { this.showError('请填写主题', '会议主题不能为空'); return; }
+        const title = document.querySelector('input[name="bookingPurpose"]:checked')?.value;
+        const attendeeCount = Number.parseInt(document.getElementById('bookingAttendeeCount')?.value || '1', 10);
+        if (!title || !BOOKING_PURPOSES.includes(title)) { this.showError('请选择用途', '请选择本次预订用途'); return; }
+        if (!Number.isInteger(attendeeCount) || attendeeCount < 1 || attendeeCount > 200) { this.showError('人数无效', '预计人数需在1到200之间'); return; }
         if (this.selectedRoom.type === 'vip' && this.currentUser.role === 'normal') { this.showError('权限不足', '普通员工无法预订VIP会议室'); return; }
 
         const startTime = this.selectedTimeSlots[0];
@@ -643,11 +635,10 @@ const app = {
             const res = await API.createBooking({
                 room_id: this.selectedRoom.id, booking_date: this.selectedDate,
                 start_time: startTime, end_time: endTime, title,
-                attendees: document.getElementById('bookingAttendees').value.trim().split(',').map(s => s.trim()).filter(s => s)
+                attendee_count: attendeeCount
             });
             if (res.code === 0) {
-                document.getElementById('bookingTitle').value = '';
-                document.getElementById('bookingAttendees').value = '';
+                this.resetBookingInfoControls();
                 this.selectedRoom = null;
                 this.selectedTimeSlots = [];
                 this.renderRoomSelect();
@@ -899,9 +890,6 @@ window.handleLogin = () => app.handleLogin();
 window.handleRegister = () => app.handleRegister();
 window.showRegisterForm = () => app.showRegisterForm();
 window.showLoginForm = () => app.showLoginForm();
-window.showWechatLogin = () => app.showWechatLogin();
-window.hideWechatLogin = (e) => app.hideWechatLogin(e);
-window.startWxLogin = () => app.startWxLogin();
 
 // ---- 添加CSS动画 ----
 const style = document.createElement('style');

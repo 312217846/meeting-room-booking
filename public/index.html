@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>财富管理 · 会议室预定系统</title>
+    <title>会议室、培训室预订系统</title>
     <style>
         * {
             margin: 0;
@@ -1799,24 +1799,20 @@
         <!-- 登录页 -->
         <div id="loginPage" class="login-page">
             <div class="login-logo">
-                <img src="img/aia-logo-new.jpg" alt="AIA" style="width:100px;height:100px;border-radius:20px;object-fit:cover;">
+                <img src="img/utopia-logo.png" alt="Utopia" style="width:100px;height:100px;border-radius:20px;object-fit:cover;">
             </div>
-            <h1 class="login-title">财富管理 · 会议室预定</h1>
-            <p class="login-subtitle">高效便捷的会议室管理解决方案</p>
+            <h1 class="login-title">会议室、培训室预订系统</h1>
+            <p class="login-subtitle">尖沙咀 港威大廈 5座26樓2601室</p>
             <div class="login-card">
                 <div id="loginForm">
-                    <div class="form-group"><label>手机号</label><input type="tel" id="loginPhone" class="form-input" placeholder="请输入手机号" maxlength="11"></div>
+                    <div class="form-group"><label>香港手机号 (+852)</label><input type="tel" id="loginPhone" class="form-input" placeholder="请输入 +852 手机号"></div>
                     <div class="form-group"><label>密码</label><input type="password" id="loginPassword" class="form-input" placeholder="请输入密码"></div>
                     <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleLogin()">登 录</button>
-                    <button class="wechat-login-btn" onclick="app.startWxLogin()" style="margin-top:12px;">
-                        <svg viewBox="0 0 24 24" fill="#07C160"><path d="M8.5 14.5c-3.5 0-6.5-2.5-6.5-5.5S5 3.5 8.5 3.5s6.5 2.5 6.5 5.5-3 5.5-6.5 5.5zm0-9c-2.5 0-4.5 1.8-4.5 4s2 4 4.5 4 4.5-1.8 4.5-4-2-4-4.5-4zm7.5 9c-.3 0-.5 0-.8-.1.3.5.5 1.1.5 1.6 0 2.8-3 5-6.5 5-.6 0-1.2-.1-1.8-.2.8 2.2 3.3 3.7 6.3 3.7 1.1 0 2.1-.2 3-.6l2.5 1.4-.7-2.4c1.3-1.1 2.2-2.6 2.2-4.3 0-3.3-3.4-6-7.5-6-.4 0-.8 0-1.2.1 1.5 1.1 2.5 2.7 2.7 4.5.4-.1.8-.2 1.2-.2 3.5 0 6.5 2.2 6.5 5s-3 5-6.5 5z"/></svg>
-                        微信登录
-                    </button>
                     <div class="form-footer">还没有账号？<a onclick="app.showRegisterForm()">立即注册</a></div>
                 </div>
                 <div id="registerForm" style="display:none;">
                     <div class="form-group"><label>姓名</label><input type="text" id="regName" class="form-input" placeholder="请输入姓名"></div>
-                    <div class="form-group"><label>手机号</label><input type="tel" id="regPhone" class="form-input" placeholder="请输入手机号" maxlength="11"></div>
+                    <div class="form-group"><label>香港手机号 (+852)</label><input type="tel" id="regPhone" class="form-input" placeholder="请输入 +852 手机号"></div>
                     <div class="form-group"><label>密码</label><input type="password" id="regPassword" class="form-input" placeholder="至少6位密码"></div>
                     <div class="form-group"><label>性别</label><div class="gender-group"><label><input type="radio" name="gender" value="male"> 男</label><label><input type="radio" name="gender" value="female"> 女</label></div></div>
                     <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleRegister()">注 册</button>
@@ -1830,7 +1826,7 @@
         <div id="mainApp" style="display: none;">
             <!-- PC端侧边导航 -->
             <nav class="pc-sidebar-nav" id="pcSidebarNav" style="display: none;">
-                <div class="pc-nav-header"><div class="header-logo"><img src="img/aia-logo-new.jpg" alt="AIA" style="width:32px;height:32px;border-radius:8px;object-fit:cover;"></div>
+                <div class="pc-nav-header"><div class="header-logo"><img src="img/utopia-logo.png" alt="Utopia" style="width:32px;height:32px;border-radius:8px;object-fit:cover;"></div>
                     <span class="pc-nav-title">会议室预订</span>
                 </div>
                 <div class="pc-nav-items">
@@ -1877,7 +1873,7 @@
                 <!-- 顶部导航 -->
                 <header class="header">
                 <div class="header-left">
-                    <div class="header-logo"><img src="img/aia-logo-new.jpg" alt="AIA" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"></div>
+                    <div class="header-logo"><img src="img/utopia-logo.png" alt="Utopia" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"></div>
                     <span class="header-title" id="pageTitle">会议室预定</span>
                 </div>
                 <div class="header-user">
@@ -1942,12 +1938,19 @@
                             <span>📝</span> 预订信息
                         </div>
                         <div class="form-group">
-                            <label class="form-label">会议主题 *</label>
-                            <input type="text" class="form-input" id="bookingTitle" placeholder="请输入会议主题">
+                            <label class="form-label">预订用途 *</label>
+                            <div class="gender-group">
+                                <label><input type="radio" name="bookingPurpose" value="见客" checked> 见客</label>
+                                <label><input type="radio" name="bookingPurpose" value="招募"> 招募</label>
+                                <label><input type="radio" name="bookingPurpose" value="培训"> 培训</label>
+                                <label><input type="radio" name="bookingPurpose" value="讲座"> 讲座</label>
+                                <label><input type="radio" name="bookingPurpose" value="会议"> 会议</label>
+                                <label><input type="radio" name="bookingPurpose" value="其他"> 其他</label>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">参与人</label>
-                            <textarea class="form-textarea" id="bookingAttendees" placeholder="请输入参与人姓名，用逗号分隔"></textarea>
+                            <label class="form-label">预计人数：<span id="bookingAttendeeCountValue">1</span></label>
+                            <input type="range" class="form-input" id="bookingAttendeeCount" min="1" max="200" value="1">
                         </div>
                     </div>
 
@@ -2107,16 +2110,6 @@
                     <button class="modal-btn secondary" onclick="app.hideConfirmCancelModal()">再想想</button>
                     <button class="modal-btn primary" onclick="app.confirmCancelBooking()" style="background: var(--danger);">确认取消</button>
                 </div>
-
-        <!-- 微信登录弹窗 -->
-        <div id="wechatLoginModal" class="modal" onclick="app.hideWechatLogin(event)">
-            <div class="modal-content" onclick="event.stopPropagation()">
-                <div class="modal-icon" style="font-size:40px;">💬</div>
-                <div class="modal-title">微信登录</div>
-                <div class="modal-message">即将跳转到微信授权页面</div>
-                <button class="wechat-login-btn" style="width:100%;justify-content:center;border-radius:8px;" onclick="app.startWxLogin()">确认微信登录</button>
-            </div>
-        </div>
 
         <!-- 会议室编辑弹窗 -->
         
