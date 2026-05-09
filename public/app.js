@@ -47,6 +47,12 @@ const API = {
 // ---- 全局会议室数据 ----
 let ROOMS_DATA = [];
 
+const ROOM_TYPE_LABELS = {
+    normal: '会议室',
+    training: '培训室',
+    vip: 'VIP室'
+};
+
 const BOOKING_PURPOSES = ['见客', '招募', '培训', '讲座', '会议', '其他'];
 
 // ---- 应用主对象（唯一入口） ----
@@ -54,6 +60,7 @@ const app = {
     currentUser: null,
     currentTab: 'rooms',
     roomFilter: 'all',
+    roomTypeFilter: 'normal',
     selectedRoom: null,
     selectedDate: null,
     selectedTimeSlots: [],
@@ -93,7 +100,84 @@ const app = {
         const [hour, min] = startTime.split(':').map(Number);
         let endHour = hour, endMin = min + 30;
         if (endMin >= 60) { endHour++; endMin = 0; }
+        if (endHour === 24 && endMin === 0) return '24:00';
         return `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+    },
+
+    generateTimeSlots() {
+        const slots = [];
+        for (let hour = 0; hour < 24; hour++) {
+            for (let min = 0; min < 60; min += 30) {
+                slots.push(`${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
+            }
+        }
+        return slots;
+    },
+
+    normalizeRoomType(roomOrType) {
+        const value = typeof roomOrType === 'string'
+            ? roomOrType
+            : (roomOrType?.room_type || roomOrType?.type || (roomOrType?.is_vip ? 'vip' : 'normal'));
+        return Object.prototype.hasOwnProperty.call(ROOM_TYPE_LABELS, value) ? value : 'normal';
+    },
+
+    parseBookingPermissions(value) {
+        let permissions = [];
+        if (Array.isArray(value)) {
+            permissions = value;
+        } else if (value) {
+            try {
+                const parsed = JSON.parse(value);
+                permissions = Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                permissions = String(value).split(',').map(item => item.trim()).filter(Boolean);
+            }
+        }
+        const normalized = permissions
+            .map(type => String(type || '').trim())
+            .filter(type => Object.prototype.hasOwnProperty.call(ROOM_TYPE_LABELS, type));
+        return [...new Set(normalized)];
+    },
+
+    getCurrentUserPermissions() {
+        if (this.currentUser?.role === 'admin') return Object.keys(ROOM_TYPE_LABELS);
+        const permissions = this.parseBookingPermissions(this.currentUser?.booking_permissions);
+        return permissions.length > 0 ? permissions : ['normal'];
+    },
+
+    userCanBookRoom(room) {
+        return this.getCurrentUserPermissions().includes(this.normalizeRoomType(room));
+    },
+
+    getRoomTypeLabel(roomOrType) {
+        return ROOM_TYPE_LABELS[this.normalizeRoomType(roomOrType)] || ROOM_TYPE_LABELS.normal;
+    },
+
+    updateRoomTypeFilterButtons() {
+        document.querySelectorAll('#roomTypeFilter [data-room-type]').forEach(button => {
+            const selected = button.dataset.roomType === this.roomTypeFilter;
+            button.classList.toggle('active', selected);
+            button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+    },
+
+    setRoomTypeFilter(type) {
+        this.roomTypeFilter = this.normalizeRoomType(type);
+        this.updateRoomTypeFilterButtons();
+        if (this.selectedRoom && (this.normalizeRoomType(this.selectedRoom) !== this.roomTypeFilter || !this.userCanBookRoom(this.selectedRoom))) {
+            this.selectedRoom = null;
+            this.selectedTimeSlots = [];
+        }
+        this.renderRoomSelect();
+        this.renderTimeSlots();
+        this.updateSubmitButtonState();
+    },
+
+    getBookingOccupantLabel(booking) {
+        const profileParts = [booking.region, booking.groupName || booking.group_name, booking.englishName || booking.english_name, booking.lastName || booking.last_name]
+            .map(part => String(part || '').trim())
+            .filter(Boolean);
+        return profileParts.length > 0 ? profileParts.join(' ') : (booking.userName || booking.user_name || '');
     },
 
     showToast(message, type = 'info') {
@@ -207,7 +291,8 @@ const app = {
             if (res.code === 0) {
                 ROOMS_DATA = res.data.map(room => ({
                     ...room,
-                    type: room.is_vip ? 'vip' : 'normal',
+                    room_type: this.normalizeRoomType(room),
+                    type: this.normalizeRoomType(room),
                     equipment: typeof room.equipment === 'string' ? JSON.parse(room.equipment || '[]') : (room.equipment || [])
                 }));
             }
@@ -293,7 +378,7 @@ const app = {
         if (pt) pt.textContent = titles[tab];
 
         if (tab === 'rooms') this.renderRooms();
-        else if (tab === 'booking') { this.renderRoomSelect(); this.renderTimeSlots(); this.updateSubmitButtonState(); }
+        else if (tab === 'booking') { this.updateRoomTypeFilterButtons(); this.renderRoomSelect(); this.renderTimeSlots(); this.updateSubmitButtonState(); }
         else if (tab === 'myBookings') this.renderMyBookings();
         else if (tab === 'admin') this.switchAdminTab('rooms');
     },
@@ -309,7 +394,6 @@ const app = {
         if (ROOMS_DATA.length === 0) await this.loadRoomsData();
         if (!this.currentUser) return;
 
-        const isNormal = this.currentUser.role === 'normal';
         const todayStr = this.formatDate(new Date());
         const nowHour = new Date().getHours();
         const nowMin = new Date().getMinutes();
@@ -322,8 +406,10 @@ const app = {
         } catch (e) {}
 
         ROOMS_DATA.forEach(room => {
-            const isVip = room.is_vip || room.type === 'vip';
-            const isLocked = isVip && isNormal;
+            const roomType = this.normalizeRoomType(room);
+            const isVip = roomType === 'vip';
+            const isLocked = !this.userCanBookRoom(room);
+            const roomTypeLabel = this.getRoomTypeLabel(roomType);
             if (this.roomFilter === 'available' && isLocked) return;
 
             // 解析设备列表
@@ -370,7 +456,7 @@ const app = {
                 <div class="room-header">
                     <div class="room-name-section">
                         <span class="room-name">${room.name}</span>
-                        ${isVip ? '<span class="room-vip-badge">VIP</span>' : ''}
+                        <span class="room-vip-badge">${roomTypeLabel}</span>
                         ${statusTag}
                     </div>
                     <span class="room-capacity">👥 ${room.capacity}人</span>
@@ -388,10 +474,11 @@ const app = {
     },
 
     handleRoomClick(room) {
-        if ((room.is_vip || room.type === 'vip') && this.currentUser.role === 'normal') {
+        if (!this.userCanBookRoom(room)) {
             this.showVipSheet();
         } else {
             this.selectedRoom = room;
+            this.roomTypeFilter = this.normalizeRoomType(room);
             this.selectedDate = this.formatDate(new Date());
             this.selectedTimeSlots = [];
             this.switchTab('booking');
@@ -491,13 +578,16 @@ const app = {
             container.innerHTML = '<div class="room-select-list" id="roomSelectList"></div>';
             this.renderRoomSelectList();
         } else {
-            const isVip = this.selectedRoom.is_vip || this.selectedRoom.type === 'vip';
-            const eqHtml = this.selectedRoom.equipment.map(e => `<span>${e}</span>`).join('');
+            const roomType = this.normalizeRoomType(this.selectedRoom);
+            const isVip = roomType === 'vip';
+            const roomTypeLabel = this.getRoomTypeLabel(roomType);
+            const equipment = Array.isArray(this.selectedRoom.equipment) ? this.selectedRoom.equipment : [];
+            const eqHtml = equipment.map(e => `<span>${e}</span>`).join('');
             container.innerHTML = `
                 <div class="room-selected-card ${isVip ? 'vip' : ''}">
                     <div class="room-selected-header">
                         <span class="room-selected-name">${this.selectedRoom.name}</span>
-                        ${isVip ? '<span class="room-selected-badge">VIP</span>' : ''}
+                        <span class="room-selected-badge">${roomTypeLabel}</span>
                     </div>
                     <div class="room-selected-meta">📍 ${this.selectedRoom.location || this.selectedRoom.floor || ''} · 👥 ${this.selectedRoom.capacity}人</div>
                     <div class="room-selected-equipment">${eqHtml}</div>
@@ -517,14 +607,20 @@ const app = {
         if (!container) return;
         if (ROOMS_DATA.length === 0) await this.loadRoomsData();
         container.innerHTML = '';
-        const isNormal = this.currentUser.role === 'normal';
-        ROOMS_DATA.forEach(room => {
-            const isVip = room.type === 'vip';
-            const isLocked = isVip && isNormal;
+        const rooms = ROOMS_DATA.filter(room => this.normalizeRoomType(room) === this.roomTypeFilter);
+        if (rooms.length === 0) {
+            container.innerHTML = `<div class="time-slot-placeholder">暂无${this.getRoomTypeLabel(this.roomTypeFilter)}</div>`;
+            return;
+        }
+        rooms.forEach(room => {
+            const roomType = this.normalizeRoomType(room);
+            const isVip = roomType === 'vip';
+            const roomTypeLabel = this.getRoomTypeLabel(roomType);
+            const isLocked = !this.userCanBookRoom(room);
             const isSelected = this.selectedRoom?.id === room.id;
             const item = document.createElement('div');
             item.className = `room-select-item ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`;
-            item.innerHTML = `<div class="room-select-info"><div class="room-select-name">${room.name} ${isVip ? '<span style="color:var(--vip-gold)">VIP</span>' : ''}</div><div class="room-select-meta">${room.location || room.floor || ''} · ${room.capacity}人</div></div>${isLocked ? '<span style="color:var(--text-secondary)">🔒</span>' : ''}`;
+            item.innerHTML = `<div class="room-select-info"><div class="room-select-name">${room.name} <span style="color:${isVip ? 'var(--vip-gold)' : 'var(--primary-dark)'}">${roomTypeLabel}</span></div><div class="room-select-meta">${room.location || room.floor || ''} · ${room.capacity}人</div></div>${isLocked ? '<span style="color:var(--text-secondary)">🔒</span>' : ''}`;
             if (!isLocked) {
                 item.onclick = () => { this.selectedRoom = room; this.selectedTimeSlots = []; this.renderRoomSelect(); this.renderTimeSlots(); this.updateSubmitButtonState(); };
             }
@@ -540,40 +636,51 @@ const app = {
         let existingBookings = [];
         try {
             const res = await API.getBookings({ room_id: this.selectedRoom.id, date: this.selectedDate });
-            if (res.code === 0) existingBookings = res.data.map(b => ({ roomId: b.room_id, date: b.booking_date, startTime: b.start_time, endTime: b.end_time, userName: b.user_name, status: b.status }));
+            if (res.code === 0) existingBookings = res.data.map(b => ({
+                roomId: b.room_id,
+                date: b.booking_date,
+                startTime: b.start_time,
+                endTime: b.end_time,
+                userName: b.user_name,
+                englishName: b.english_name,
+                lastName: b.last_name,
+                region: b.region,
+                groupName: b.group_name,
+                status: b.status
+            }));
         } catch (e) { console.error('获取预订数据失败:', e); }
 
         const now = new Date();
         const todayStr = this.formatDate(now);
         const isToday = this.selectedDate === todayStr;
 
-        for (let hour = 8; hour < 18; hour++) {
-            for (let min = 0; min < 60; min += 30) {
-                const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-                const slot = document.createElement('div');
-                slot.dataset.time = time;
+        this.generateTimeSlots().forEach(time => {
+            const [hour, min] = time.split(':').map(Number);
+            const endTime = this.getEndTime(time);
+            const slot = document.createElement('div');
+            slot.dataset.time = time;
 
-                const isPast = isToday && (hour < now.getHours() || (hour === now.getHours() && min <= now.getMinutes()));
-                const booking = existingBookings.find(b => time >= b.startTime && time < b.endTime);
+            const isPast = isToday && (hour < now.getHours() || (hour === now.getHours() && min <= now.getMinutes()));
+            const booking = existingBookings.find(b => time >= b.startTime && time < b.endTime);
+            const slotLabel = `<span>${time}</span><span class="booker-name">${time} - ${endTime}</span>`;
 
-                if (isPast) {
-                    slot.className = 'time-slot past';
-                    slot.innerHTML = `<span>${time}</span><span class="booker-name">已过</span>`;
-                } else if (booking) {
-                    slot.className = 'time-slot occupied';
-                    slot.innerHTML = `<span>${time}</span><span class="booker-name">${booking.userName}</span>`;
-                } else if (this.selectedTimeSlots.includes(time)) {
-                    slot.className = 'time-slot selected';
-                    slot.textContent = time;
-                    slot.onclick = () => this.toggleTimeSlot(time, slot);
-                } else {
-                    slot.className = 'time-slot available';
-                    slot.textContent = time;
-                    slot.onclick = () => this.toggleTimeSlot(time, slot);
-                }
-                container.appendChild(slot);
+            if (isPast) {
+                slot.className = 'time-slot past';
+                slot.innerHTML = `<span>${time}</span><span class="booker-name">已过</span>`;
+            } else if (booking) {
+                slot.className = 'time-slot occupied';
+                slot.innerHTML = `<span>${time}</span><span class="booker-name">${this.getBookingOccupantLabel(booking)}</span>`;
+            } else if (this.selectedTimeSlots.includes(time)) {
+                slot.className = 'time-slot selected';
+                slot.innerHTML = slotLabel;
+                slot.onclick = () => this.toggleTimeSlot(time, slot);
+            } else {
+                slot.className = 'time-slot available';
+                slot.innerHTML = slotLabel;
+                slot.onclick = () => this.toggleTimeSlot(time, slot);
             }
-        }
+            container.appendChild(slot);
+        });
     },
 
     toggleTimeSlot(time, element) {
@@ -626,7 +733,7 @@ const app = {
         const attendeeCount = Number.parseInt(document.getElementById('bookingAttendeeCount')?.value || '1', 10);
         if (!title || !BOOKING_PURPOSES.includes(title)) { this.showError('请选择用途', '请选择本次预订用途'); return; }
         if (!Number.isInteger(attendeeCount) || attendeeCount < 1 || attendeeCount > 200) { this.showError('人数无效', '预计人数需在1到200之间'); return; }
-        if (this.selectedRoom.type === 'vip' && this.currentUser.role === 'normal') { this.showError('权限不足', '普通员工无法预订VIP会议室'); return; }
+        if (!this.userCanBookRoom(this.selectedRoom)) { this.showError('权限不足', `您没有预订${this.getRoomTypeLabel(this.selectedRoom)}的权限`); return; }
 
         const startTime = this.selectedTimeSlots[0];
         const endTime = this.getEndTime(this.selectedTimeSlots[this.selectedTimeSlots.length - 1]);

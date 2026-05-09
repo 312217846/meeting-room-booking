@@ -607,6 +607,21 @@
             color: white;
         }
 
+        .room-type-filter {
+            background: var(--bg-gray);
+            border-radius: 12px;
+            padding: 4px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .room-type-filter .tab-btn {
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
         /* 会议室列表 */
         .room-list {
             padding: 16px;
@@ -1913,6 +1928,11 @@
                     <div class="booking-section">
                         <div class="booking-section-title">
                             <span>📅</span> 选择会议室
+                        </div>
+                        <div class="room-type-filter" id="roomTypeFilter" role="group" aria-label="会议室类型">
+                            <button class="tab-btn active" type="button" data-room-type="normal" onclick="app.setRoomTypeFilter('normal')">会议室</button>
+                            <button class="tab-btn" type="button" data-room-type="training" onclick="app.setRoomTypeFilter('training')">培训室</button>
+                            <button class="tab-btn" type="button" data-room-type="vip" onclick="app.setRoomTypeFilter('vip')">VIP室</button>
                         </div>
                         <div class="room-select-container" id="roomSelectContainer"><div id="roomSelectList"></div>
                             <!-- 动态渲染会议室选择区域 -->

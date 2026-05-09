@@ -20,3 +20,12 @@ test('booking page has V2 purpose and attendee controls', () => {
     assert.match(html, /id="bookingAttendeeCountValue"/);
     assert.match(appJs, /BOOKING_PURPOSES/);
 });
+
+test('booking page exposes room type filters and 24-hour behavior hooks', () => {
+    assert.match(html, /roomTypeFilter/);
+    assert.match(html, /data-room-type="normal"/);
+    assert.match(html, /data-room-type="training"/);
+    assert.match(html, /data-room-type="vip"/);
+    assert.match(appJs, /generateTimeSlots/);
+    assert.match(appJs, /24:00/);
+});
