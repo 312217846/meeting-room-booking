@@ -278,6 +278,25 @@ function getTodayDateString() {
     ].join('-');
 }
 
+function buildReportDateRange(yearValue, monthValue) {
+    const now = new Date();
+    const parsedYear = Number.parseInt(yearValue, 10);
+    const parsedMonth = Number.parseInt(monthValue, 10);
+    const year = Number.isInteger(parsedYear) ? parsedYear : now.getFullYear();
+    const month = Number.isInteger(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12
+        ? parsedMonth
+        : now.getMonth() + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const nextMonth = month === 12 ? 1 : month + 1;
+
+    return {
+        year,
+        month,
+        startDate: `${year}-${String(month).padStart(2, '0')}-01`,
+        endDate: `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
+    };
+}
+
 function buildSessionUser(user) {
     return {
         id: user.id,
@@ -903,14 +922,26 @@ app.get('/api/bookings/check-availability', requireAuth, async (req, res) => {
 // 创建预订
 app.post('/api/bookings', requireAuth, async (req, res) => {
     const { room_id, booking_date, start_time, end_time, title, attendees, attendee_count, remark } = req.body;
+    let connection;
     
     try {
-        const [users] = await pool.execute('SELECT * FROM users WHERE id = ?', [req.session.user.id]);
+        connection = await pool.getConnection();
+        await connection.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+        await connection.beginTransaction();
+
+        const rollbackAndRespond = async (status, payload) => {
+            await connection.rollback();
+            return res.status(status).json(payload);
+        };
+
+        const [users] = await connection.execute('SELECT * FROM users WHERE id = ? FOR UPDATE', [req.session.user.id]);
         if (users.length === 0) {
+            await connection.rollback();
             req.session.destroy(() => {});
             return res.status(401).json({ code: 401, message: '账号不存在，请重新登录' });
         }
         if (!toBoolean(users[0].is_active, true)) {
+            await connection.rollback();
             req.session.destroy(() => {});
             return res.status(403).json({ code: 403, message: '账号已停用，请联系管理员' });
         }
@@ -919,9 +950,9 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
         req.session.user = currentUser;
 
         // 检查会议室是否存在
-        const [rooms] = await pool.execute('SELECT * FROM meeting_rooms WHERE id = ? AND is_active = TRUE', [room_id]);
+        const [rooms] = await connection.execute('SELECT * FROM meeting_rooms WHERE id = ? AND is_active = TRUE FOR UPDATE', [room_id]);
         if (rooms.length === 0) {
-            return res.status(404).json({ code: 404, message: '会议室不存在' });
+            return rollbackAndRespond(404, { code: 404, message: '会议室不存在' });
         }
         
         const room = {
@@ -939,50 +970,65 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
             roomCapacity: room.capacity
         });
         if (!validation.valid) {
-            return res.status(400).json({ code: 400, message: validation.message });
+            return rollbackAndRespond(400, { code: 400, message: validation.message });
         }
 
         if (!hasRoomTypePermission(currentUser, room)) {
-            return res.status(403).json({ code: 403, message: '没有权限预订该类型房间' });
+            return rollbackAndRespond(403, { code: 403, message: '没有权限预订该类型房间' });
         }
 
-        const [roomBookings] = await pool.execute(
+        const [roomBookings] = await connection.execute(
             `SELECT start_time, end_time FROM bookings
-             WHERE room_id = ? AND booking_date = ? AND status = 'confirmed'`,
+             WHERE room_id = ? AND booking_date = ? AND status = 'confirmed'
+             FOR UPDATE`,
             [room_id, booking_date]
         );
         
         if (roomBookings.some(booking => rangesOverlap(start_time, end_time, booking.start_time, booking.end_time))) {
-            return res.status(400).json({ code: 400, message: '该时间段已被预订' });
+            return rollbackAndRespond(400, { code: 400, message: '该时间段已被预订' });
         }
 
-        const [userBookings] = await pool.execute(
+        const [userBookings] = await connection.execute(
             `SELECT start_time, end_time FROM bookings
-             WHERE user_id = ? AND booking_date = ? AND status = 'confirmed'`,
+             WHERE user_id = ? AND booking_date = ? AND status = 'confirmed'
+             FOR UPDATE`,
             [currentUser.userid, booking_date]
         );
 
         if (userBookings.some(booking => rangesOverlap(start_time, end_time, booking.start_time, booking.end_time))) {
-            return res.status(400).json({ code: 400, message: '同一时间不能预订两间房' });
+            return rollbackAndRespond(400, { code: 400, message: '同一时间不能预订两间房' });
         }
 
         if (wouldExceedDailyLimit(userBookings, start_time, end_time, currentUser.daily_booking_limit_minutes)) {
-            return res.status(400).json({ code: 400, message: '该用户今日预订总时长已超过上限' });
+            return rollbackAndRespond(400, { code: 400, message: '该用户今日预订总时长已超过上限' });
         }
         
         const bookingNo = generateBookingNo();
         const attendeeCount = Number(attendee_count);
         
-        const [result] = await pool.execute(
+        const [result] = await connection.execute(
             `INSERT INTO bookings (booking_no, room_id, user_id, booking_date, start_time, end_time, title, attendees, attendee_count, remark) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [bookingNo, room_id, currentUser.userid, booking_date, start_time, end_time, title, JSON.stringify(attendees || []), attendeeCount, remark || null]
         );
+
+        await connection.commit();
         
         res.json({ code: 0, data: { id: result.insertId, booking_no: bookingNo }, message: '预订成功' });
     } catch (error) {
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch (rollbackError) {
+                console.error('回滚预订事务失败:', rollbackError);
+            }
+        }
         console.error('创建预订失败:', error);
         res.status(500).json({ code: 500, message: '创建预订失败' });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
     }
 });
 
@@ -1337,12 +1383,9 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
 
 // 获取报告数据（管理员）
 app.get('/api/admin/reports', requireAdmin, async (req, res) => {
-    const { type = 'monthly', year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
-    
     try {
         // 构建时间范围
-        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-        const endDate = month === 12 ? `${parseInt(year) + 1}-01-01` : `${year}-${String(parseInt(month) + 1).padStart(2, '0')}-01`;
+        const { year, month, startDate, endDate } = buildReportDateRange(req.query.year, req.query.month);
         
         // 1. 各会议室使用次数排行
         const [roomUsage] = await pool.execute(`
@@ -1432,11 +1475,10 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
 
 // 导出报告CSV（管理员）
 app.get('/api/admin/reports/export', requireAdmin, async (req, res) => {
-    const { type = 'room', year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
+    const { type = 'room' } = req.query;
     
     try {
-        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-        const endDate = month === 12 ? `${parseInt(year) + 1}-01-01` : `${year}-${String(parseInt(month) + 1).padStart(2, '0')}-01`;
+        const { year, month, startDate, endDate } = buildReportDateRange(req.query.year, req.query.month);
         
         let data, filename, headers;
         
@@ -1490,7 +1532,7 @@ app.get('/api/admin/reports/export', requireAdmin, async (req, res) => {
                        b.title as '用途', b.attendee_count as '参与人数', b.status as '状态'
                 FROM bookings b
                 JOIN meeting_rooms r ON b.room_id = r.id
-                JOIN users u ON b.user_id = u.userid
+                LEFT JOIN users u ON b.user_id = u.userid
                 WHERE b.booking_date >= ? AND b.booking_date < ?
                 ORDER BY b.booking_date DESC, b.start_time DESC
             `, [startDate, endDate]);
