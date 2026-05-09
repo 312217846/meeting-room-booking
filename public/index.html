@@ -1719,7 +1719,8 @@
             font-weight: 600;
             letter-spacing: 0;
         }
-        .pmagic-powered img {
+        .pmagic-powered img,
+        .pmagic-powered .pmagic-logo {
             width: 84px;
             height: auto;
             display: block;
@@ -1843,9 +1844,377 @@
         .form-textarea {
             min-height: 80px; resize: vertical;
         }
+
+        /* ===== 白色水晶金色轻奢主题 ===== */
+        :root {
+            --crystal-page: #F7FAFE;
+            --crystal-glass: rgba(255, 255, 255, 0.68);
+            --crystal-glass-strong: rgba(255, 255, 255, 0.82);
+            --crystal-border: rgba(255, 255, 255, 0.74);
+            --crystal-line: rgba(198, 213, 226, 0.44);
+            --crystal-shadow: 0 24px 70px rgba(95, 117, 139, 0.18), 0 4px 18px rgba(150, 124, 55, 0.08);
+            --crystal-shadow-soft: 0 14px 38px rgba(90, 114, 138, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+            --gold: #C9A96E;
+            --gold-deep: #9C7B3C;
+            --gold-soft: rgba(201, 169, 110, 0.16);
+            --teal-accent: #31BFA6;
+            --text-primary: #18212B;
+            --text-secondary: #687789;
+            --border: rgba(191, 204, 218, 0.48);
+            --bg-gray: var(--crystal-page);
+            --primary: var(--gold);
+            --primary-dark: var(--gold-deep);
+            --primary-light: rgba(201, 169, 110, 0.16);
+            --primary-lighter: rgba(255, 255, 255, 0.64);
+            --vip-gold: #D2AE5E;
+            --vip-gold-light: rgba(210, 174, 94, 0.16);
+            --card-shadow: var(--crystal-shadow-soft);
+        }
+
+        body {
+            background:
+                linear-gradient(135deg, #F8FBFF 0%, #EEF5FB 44%, #F7F0DF 100%);
+            color: var(--text-primary);
+            letter-spacing: 0;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.66), rgba(255,255,255,0.18) 42%, rgba(255,255,255,0.56)),
+                linear-gradient(180deg, rgba(236,246,255,0.72), rgba(255,255,255,0.18) 46%, rgba(249,242,225,0.5));
+            z-index: -1;
+        }
+
+        #app,
+        .main-content-wrapper {
+            background: transparent;
+        }
+
+        .pc-sidebar-nav,
+        .header,
+        .bottom-nav,
+        .login-card,
+        .room-card,
+        .booking-section,
+        .booking-card,
+        .admin-section,
+        .stat-card,
+        .modal-content,
+        .bottom-sheet-content,
+        .room-selected-card,
+        .room-select-item,
+        .admin-table,
+        .user-select-content {
+            background: var(--crystal-glass-strong);
+            border: 1px solid var(--crystal-border);
+            box-shadow: var(--crystal-shadow-soft);
+            -webkit-backdrop-filter: blur(24px) saturate(175%);
+            backdrop-filter: blur(24px) saturate(175%);
+        }
+
+        .login-page {
+            background:
+                linear-gradient(145deg, rgba(247,251,255,0.92), rgba(238,246,253,0.82) 44%, rgba(246,238,219,0.86));
+            padding: 48px 24px;
+        }
+
+        .login-logo {
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.86);
+            box-shadow: var(--crystal-shadow);
+            -webkit-backdrop-filter: blur(22px) saturate(170%);
+            backdrop-filter: blur(22px) saturate(170%);
+        }
+
+        .login-logo img,
+        .header-logo img,
+        .pc-nav-header .header-logo img {
+            box-shadow: 0 10px 24px rgba(49, 191, 166, 0.14);
+        }
+
+        .login-title {
+            color: #15202B;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        .login-subtitle {
+            color: rgba(24,33,43,0.62);
+            margin-bottom: 34px;
+        }
+
+        .login-card {
+            border-radius: 28px;
+            box-shadow: var(--crystal-shadow);
+        }
+
+        .form-input,
+        .login-card .form-input,
+        .form-textarea,
+        .role-select,
+        .admin-table select,
+        textarea.form-input {
+            background: rgba(255,255,255,0.64);
+            border: 1px solid var(--crystal-line);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.86);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus,
+        .login-card .form-input:focus,
+        .form-textarea:focus {
+            background: rgba(255,255,255,0.86);
+            border-color: rgba(201,169,110,0.72);
+            box-shadow: 0 0 0 4px rgba(201,169,110,0.16), inset 0 1px 0 rgba(255,255,255,0.95);
+        }
+
+        .wechat-login-btn,
+        .btn-primary,
+        .submit-btn,
+        .modal-btn.primary,
+        .booking-btn.primary,
+        .room-change-btn,
+        .admin-tab.active,
+        .tab-btn.active,
+        .time-slot.selected,
+        .cal-day.selected,
+        .date-item.active,
+        button[onclick*="handleLogin"],
+        button[onclick*="handleRegister"] {
+            background: linear-gradient(135deg, #E5C983 0%, #C9A96E 48%, #9C7B3C 100%) !important;
+            border: 1px solid rgba(255,255,255,0.58) !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 14px 28px rgba(156,123,60,0.24), inset 0 1px 0 rgba(255,255,255,0.38);
+        }
+
+        .wechat-login-btn:hover,
+        .btn-primary:hover,
+        .submit-btn:hover:not(:disabled),
+        .booking-btn.primary:hover,
+        .modal-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 36px rgba(156,123,60,0.28), inset 0 1px 0 rgba(255,255,255,0.42);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(204, 212, 220, 0.64) !important;
+            color: rgba(90, 101, 112, 0.72) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+
+        .pc-sidebar-nav {
+            background: rgba(255,255,255,0.7);
+            border-right: 1px solid rgba(255,255,255,0.7);
+        }
+
+        .pc-nav-header,
+        .pc-nav-footer {
+            border-color: var(--crystal-line);
+        }
+
+        .pc-nav-item,
+        .bottom-nav .nav-item,
+        .admin-tab,
+        .tab-btn {
+            border: 1px solid transparent;
+        }
+
+        .pc-nav-item:hover,
+        .pc-nav-item.active,
+        .room-select-item:hover,
+        .room-select-item.selected,
+        .tab-filter,
+        .room-type-filter,
+        .search-box,
+        .date-item,
+        .time-slot.available,
+        .cal-nav-btn,
+        .modal-btn.secondary,
+        .cancel-btn {
+            background: rgba(255,255,255,0.58);
+            border-color: var(--crystal-line);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.76);
+        }
+
+        .header,
+        .bottom-nav {
+            background: rgba(255,255,255,0.68);
+            border-color: rgba(255,255,255,0.78);
+        }
+
+        .page-header,
+        .tab-filter {
+            background: transparent;
+        }
+
+        .page-title,
+        .booking-section-title,
+        .admin-section-title,
+        .modal-title,
+        .bottom-sheet-title,
+        .room-name,
+        .booking-room {
+            color: #18212B;
+            letter-spacing: 0;
+        }
+
+        .room-card,
+        .booking-card,
+        .admin-section,
+        .booking-section {
+            border-radius: 22px;
+        }
+
+        .room-card:hover,
+        .booking-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--crystal-shadow);
+        }
+
+        .room-card.vip,
+        .booking-card.vip,
+        .room-selected-card.vip,
+        .vip-info {
+            background:
+                linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,248,230,0.68));
+            border: 1px solid rgba(210,174,94,0.58);
+            color: var(--text-primary);
+            box-shadow: 0 18px 48px rgba(156,123,60,0.16), inset 0 1px 0 rgba(255,255,255,0.88);
+        }
+
+        .room-card.vip .room-name,
+        .room-card.vip .room-info,
+        .room-card.vip .room-capacity,
+        .booking-card.vip .booking-info,
+        .booking-card.vip .booking-time,
+        .room-selected-card.vip .room-selected-name,
+        .room-selected-card.vip .room-selected-meta {
+            color: var(--text-primary);
+        }
+
+        .room-vip-badge,
+        .vip-badge-small,
+        .room-selected-badge {
+            background: linear-gradient(135deg, #F3D47D, #C9A96E);
+            color: #3A2B10;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+        }
+
+        .equipment-tag,
+        .room-selected-equipment span,
+        .booking-status.upcoming,
+        .status-badge.active {
+            background: rgba(201,169,110,0.14);
+            border: 1px solid rgba(201,169,110,0.2);
+            color: var(--gold-deep);
+        }
+
+        .time-slot.available:hover,
+        .cal-day:hover,
+        .date-item:hover,
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.82);
+            border-color: rgba(201,169,110,0.46);
+            box-shadow: 0 10px 24px rgba(156,123,60,0.1);
+        }
+
+        .time-slot.occupied {
+            background: rgba(226,232,238,0.55);
+            border-color: rgba(190,202,214,0.38);
+            color: rgba(104,119,137,0.7);
+        }
+
+        .permission-banner {
+            background: rgba(255,255,255,0.7);
+            border-bottom: 1px solid rgba(201,169,110,0.22);
+            -webkit-backdrop-filter: blur(18px) saturate(170%);
+            backdrop-filter: blur(18px) saturate(170%);
+        }
+
+        .permission-banner-text,
+        .nav-item.active,
+        .pc-user-badge,
+        .form-footer a,
+        .room-select-toggle,
+        .log-content .action,
+        .stat-value {
+            color: var(--gold-deep);
+        }
+
+        .stats-grid .stat-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(248,252,255,0.58));
+            border-radius: 18px;
+        }
+
+        .admin-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+        }
+
+        .admin-table th {
+            background: rgba(255,255,255,0.74);
+            color: #5C6876;
+        }
+
+        .admin-table td,
+        .admin-table th {
+            border-bottom: 1px solid rgba(191,204,218,0.34);
+        }
+
+        .pmagic-powered {
+            background: rgba(255,255,255,0.66);
+            border-color: rgba(255,255,255,0.8);
+            box-shadow: var(--crystal-shadow-soft);
+        }
+
+        .pc-nav-footer button[onclick*="handleLogout"],
+        .header-user button[onclick*="handleLogout"] {
+            background: rgba(255,255,255,0.62) !important;
+            border: 1px solid rgba(191,204,218,0.58) !important;
+            color: var(--text-secondary) !important;
+            border-radius: 999px !important;
+        }
+
+        @media (min-width: 769px) {
+            body {
+                background:
+                    linear-gradient(135deg, #F8FBFF 0%, #EEF5FB 44%, #F7F0DF 100%);
+            }
+            .rooms-grid,
+            .booking-layout,
+            .bookings-list,
+            .admin-page {
+                padding: 28px;
+            }
+            .main-content-wrapper {
+                margin-left: 252px;
+            }
+            .pc-sidebar-nav {
+                width: 252px;
+                padding: 26px 18px;
+            }
+        }
     </style>
 </head>
 <body>
+    <svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden">
+        <symbol id="pmagic-ai-logo-symbol" viewBox="0 0 188 44">
+            <g transform="translate(3 4)">
+                <rect x="14" y="-1" width="8" height="38" rx="2" transform="rotate(45 14 -1)" fill="#F4D44D"></rect>
+                <rect x="14" y="-1" width="8" height="38" rx="2" transform="rotate(-45 14 -1)" fill="#EA70B6"></rect>
+                <rect x="0" y="14" width="36" height="8" rx="2" fill="#6A4DF5"></rect>
+                <rect x="14" y="0" width="8" height="36" rx="2" fill="#7F62FF"></rect>
+                <circle cx="18" cy="18" r="5" fill="#FF9C5A"></circle>
+            </g>
+            <text x="50" y="29" fill="#111111" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="23" font-weight="700" letter-spacing="0">PMagic AI</text>
+            <text x="164" y="17" fill="#111111" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="8" font-weight="700">TM</text>
+        </symbol>
+    </svg>
     <div id="app">
         <!-- 登录页 -->
         <div id="loginPage" class="login-page">
@@ -1872,7 +2241,9 @@
             </div>
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
                 <span class="powered-text">Powered by</span>
-                <img src="img/pmagic-ai-logo.svg" alt="PMagic AI">
+                <svg class="pmagic-logo" viewBox="0 0 188 44" role="img" aria-label="PMagic AI">
+                    <use href="#pmagic-ai-logo-symbol"></use>
+                </svg>
             </div>
         </div>
         
@@ -2094,7 +2465,9 @@
             </div>
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
                 <span class="powered-text">Powered by</span>
-                <img src="img/pmagic-ai-logo.svg" alt="PMagic AI">
+                <svg class="pmagic-logo" viewBox="0 0 188 44" role="img" aria-label="PMagic AI">
+                    <use href="#pmagic-ai-logo-symbol"></use>
+                </svg>
             </div>
 
             <!-- 底部导航 -->

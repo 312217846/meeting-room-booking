@@ -46,8 +46,16 @@ test('login page uses Utopia V2 branding and no WeChat login button', () => {
 
 test('pages include PMagic AI powered footer', () => {
     assert.match(html, /Powered by/);
-    assert.match(html, /pmagic-ai-logo\.svg/);
     assert.match(html, /pmagic-powered/);
+    assert.match(html, /pmagic-ai-logo-symbol/);
+    assert.match(html, /class="pmagic-logo"/);
+});
+
+test('page includes white crystal luxury theme anchors', () => {
+    assert.match(html, /白色水晶金色轻奢主题/);
+    assert.match(html, /--crystal-glass/);
+    assert.match(html, /backdrop-filter: blur\(24px\) saturate\(175%\)/);
+    assert.match(html, /linear-gradient\(135deg, #E5C983 0%, #C9A96E 48%, #9C7B3C 100%\)/);
 });
 
 test('booking page has V2 purpose and attendee controls', () => {
