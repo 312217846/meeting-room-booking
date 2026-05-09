@@ -325,7 +325,7 @@ const app = {
         if (location.protocol === 'file:') return true;
         try {
             const params = new URLSearchParams(location.search || '');
-            return params.get('preview') === '1' && this.isLocalPreviewHost();
+            return this.isLocalPreviewHost() || (params.get('preview') === '1' && this.isLocalPreviewHost());
         } catch (error) {
             return false;
         }
@@ -334,7 +334,7 @@ const app = {
     getPreviewUser() {
         return {
             id: 1,
-            name: '预览管理员',
+            name: '默认管理员',
             phone: '+852 0000 0000',
             avatar: 'P',
             role: 'admin',
@@ -366,6 +366,79 @@ const app = {
             { id: 101, room_id: 1, roomId: 1, room_name: 'Harbour Crystal Room', booking_date: date, date, start_time: '09:00', startTime: '09:00', end_time: '10:30', endTime: '10:30', user_name: '陈小曼', title: '见客', status: 'confirmed', attendee_count: 4, created_at: `${date}T08:30:00` },
             { id: 102, room_id: 2, roomId: 2, room_name: 'Golden Training Suite', booking_date: date, date, start_time: '14:00', startTime: '14:00', end_time: '16:00', endTime: '16:00', user_name: '林志豪', title: '培训', status: 'confirmed', attendee_count: 22, created_at: `${date}T09:10:00` }
         ];
+    },
+
+    getPreviewReportData() {
+        const year = this.currentReportPeriod.year;
+        const month = this.currentReportPeriod.month;
+        const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+        const rooms = this.getPreviewRooms();
+        const users = this.getPreviewUsers();
+        const roomUsage = [
+            { ...rooms[0], booking_count: 12, total_minutes: 960 },
+            { ...rooms[1], booking_count: 9, total_minutes: 1080 },
+            { ...rooms[2], booking_count: 5, total_minutes: 420 }
+        ];
+        const userUsage = [
+            { ...users[1], user_name: users[1].name, booking_count: 10, total_minutes: 780 },
+            { ...users[2], user_name: users[2].name, booking_count: 8, total_minutes: 660 },
+            { ...users[0], user_name: users[0].name, booking_count: 4, total_minutes: 360 }
+        ];
+        const bookingUsage = [
+            { title: '见客', room_type: 'normal', booking_count: 10, total_minutes: 720 },
+            { title: '培训', room_type: 'training', booking_count: 8, total_minutes: 960 },
+            { title: '会议', room_type: 'normal', booking_count: 5, total_minutes: 420 },
+            { title: '讲座', room_type: 'vip', booking_count: 3, total_minutes: 360 }
+        ];
+        const dailyCounts = [0, 2, 1, 0, 3, 4, 0, 1, 2, 0, 5, 1, 0, 2, 3, 0, 1, 4, 2, 0, 3, 1, 0, 2, 4, 0, 1, 2];
+        const totalMinutes = roomUsage.reduce((sum, item) => sum + item.total_minutes, 0);
+        const totalBookings = roomUsage.reduce((sum, item) => sum + item.booking_count, 0);
+
+        return {
+            totalStats: {
+                totalBookings,
+                totalHours: Math.round(totalMinutes / 60 * 10) / 10,
+                avgDuration: Math.round(totalMinutes / totalBookings),
+                totalAttendees: 186,
+                avgAttendees: 7,
+                activeUsers: userUsage.length,
+                activeRooms: roomUsage.length,
+                peakDay: `${monthPrefix}-11`,
+                peakHour: '14:00'
+            },
+            attendeeStats: {
+                totalAttendees: 186,
+                avgAttendees: 7,
+                maxAttendees: 28
+            },
+            roomUsage,
+            userUsage,
+            bookingUsage,
+            roomTypeUsage: [
+                { room_type: 'normal', booking_count: 15, total_minutes: 1380 },
+                { room_type: 'training', booking_count: 9, total_minutes: 1080 },
+                { room_type: 'vip', booking_count: 5, total_minutes: 420 }
+            ],
+            regionUsage: [
+                { region: '香港', booking_count: 15, total_minutes: 1140 },
+                { region: '九龙', booking_count: 8, total_minutes: 660 }
+            ],
+            groupUsage: [
+                { group_name: 'Agency A', booking_count: 12, total_minutes: 900 },
+                { group_name: 'Agency B', booking_count: 9, total_minutes: 720 }
+            ],
+            hourlyUsage: [
+                { hour: 9, booking_count: 4 },
+                { hour: 10, booking_count: 3 },
+                { hour: 14, booking_count: 8 },
+                { hour: 15, booking_count: 5 },
+                { hour: 17, booking_count: 2 }
+            ],
+            dailyTrend: dailyCounts.map((count, index) => ({
+                booking_date: `${monthPrefix}-${String(index + 1).padStart(2, '0')}`,
+                booking_count: count
+            }))
+        };
     },
 
     primePreviewData() {
@@ -493,6 +566,16 @@ const app = {
     },
 
     async loadData() {
+        if (this.shouldUseInstantPreviewLogin()) {
+            this.previewMode = true;
+            ROOMS_DATA = this.getPreviewRooms();
+            try {
+                const saved = localStorage.getItem('currentUser');
+                const savedUser = saved ? JSON.parse(saved) : null;
+                if (savedUser?.preview_mode) this.currentUser = this.getPreviewUser();
+            } catch (error) {}
+            return;
+        }
         try {
             const res = await API.getMe();
             if (res.code === 0) this.currentUser = res.data;
@@ -1460,6 +1543,12 @@ const app = {
 
     // ==================== 报告 ====================
     async loadReports() {
+        if (this.previewMode || this.shouldUseInstantPreviewLogin()) {
+            this.previewMode = true;
+            this.reportData = this.getPreviewReportData();
+            this.renderReports();
+            return;
+        }
         try {
             const res = await API.getReports({ year: this.currentReportPeriod.year, month: this.currentReportPeriod.month });
             if (res.code === 0) { this.reportData = res.data; this.renderReports(); }

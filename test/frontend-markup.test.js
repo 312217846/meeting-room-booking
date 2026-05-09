@@ -8,7 +8,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(repoRoot, 'public', 'index.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(repoRoot, 'public', 'app.js'), 'utf8');
 
-function loadFrontendApp(windowOverrides = {}) {
+function loadFrontendApp(windowOverrides = {}, sandboxOverrides = {}) {
     const sandbox = {
         console,
         fetch: async () => ({ json: async () => ({}) }),
@@ -31,7 +31,8 @@ function loadFrontendApp(windowOverrides = {}) {
             getElementById: () => null,
             querySelector: () => null,
             querySelectorAll: () => []
-        }
+        },
+        ...sandboxOverrides
     };
     vm.runInNewContext(appJs, sandbox);
     return sandbox.window.app;
@@ -56,7 +57,45 @@ test('file preview login enters the app without credentials', async () => {
     await app.handleLogin();
 
     assert.equal(previewUser.role, 'admin');
+    assert.equal(previewUser.name, '默认管理员');
     assert.equal(previewUser.phone, '+852 0000 0000');
+});
+
+test('local preview initializes without backend requests before login', async () => {
+    const app = loadFrontendApp(
+        { location: { protocol: 'file:', search: '' } },
+        { fetch: async () => { throw new Error('preview should not request backend'); } }
+    );
+
+    await app.loadData();
+
+    assert.equal(app.previewMode, true);
+    assert.equal(app.currentUser, null);
+});
+
+test('localhost login also enters the default admin preview without credentials', async () => {
+    const app = loadFrontendApp({ location: { protocol: 'http:', hostname: 'localhost', search: '' } });
+    let previewUser = null;
+    app.handleLoginSuccess = async user => { previewUser = user; };
+
+    await app.handleLogin();
+
+    assert.equal(previewUser.role, 'admin');
+    assert.equal(previewUser.name, '默认管理员');
+});
+
+test('preview reports render local dashboard data without backend requests', async () => {
+    const app = loadFrontendApp(
+        { location: { protocol: 'file:', search: '' } },
+        { fetch: async () => { throw new Error('preview reports should not request backend'); } }
+    );
+    app.previewMode = true;
+
+    await app.loadReports();
+
+    assert.equal(app.reportData.totalStats.totalBookings > 0, true);
+    assert.equal(app.reportData.roomUsage.length > 0, true);
+    assert.equal(app.reportData.dailyTrend.length > 0, true);
 });
 
 test('pages include PMagic AI powered footer', () => {
