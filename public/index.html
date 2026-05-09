@@ -2019,15 +2019,35 @@
                         </div>
                         <div id="adminTab-rooms" class="admin-tab-content active">
                             <div style="text-align:right;margin-bottom:12px;"><button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.showRoomEditModal()">+ 新建会议室</button></div>
-                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>名称</th><th>容量</th><th>楼层</th><th>位置</th><th>设备</th><th>VIP</th><th>状态</th><th>操作</th></tr></thead><tbody id="adminRoomTableBody"></tbody></table></div>
+                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>名称</th><th>类型</th><th>容量</th><th>楼层</th><th>位置</th><th>设备</th><th>状态</th><th>操作</th></tr></thead><tbody id="adminRoomTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-users" class="admin-tab-content">
-                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>手机</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                                <input type="search" id="adminUserSearch" class="form-input" placeholder="搜索姓名、手机、地区或组别" style="max-width:320px;" oninput="app.renderAdminUserTable()">
+                                <button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.renderAdminUserTable()">搜索</button>
+                            </div>
+                            <div style="display:grid;gap:10px;margin-bottom:16px;">
+                                <input type="file" id="userImportFile" class="form-input" accept=".csv,.txt,text/csv,text/plain">
+                                <textarea id="userImportText" class="form-input" rows="5" placeholder="粘贴用户导入数据，支持 CSV 或文本格式"></textarea>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    <button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.importUsersFromFile()">从文件导入</button>
+                                    <button class="btn-primary" style="width:auto;padding:8px 20px;font-size:13px;border-radius:8px;" onclick="app.importUsersFromText()">导入文本</button>
+                                </div>
+                            </div>
+                            <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>英文名</th><th>手机</th><th>角色</th><th>地区</th><th>组别</th><th>权限</th><th>每日上限</th><th>状态</th><th>重置密码</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-reports" class="admin-tab-content">
-                            <div id="reportPeriod" style="margin-bottom:16px;"></div>
-                            <canvas id="roomUsageChart" height="200"></canvas>
-                            <canvas id="userUsageChart" height="200" style="margin-top:16px;"></canvas>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+                                <div id="reportPeriod"></div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="app.exportReport('room')">导出会议室</button>
+                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="app.exportReport('user')">导出用户</button>
+                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="app.exportReport('booking')">导出预订</button>
+                                </div>
+                            </div>
+                            <div id="roomUsageChart" style="min-height:160px;"></div>
+                            <div id="userUsageChart" style="min-height:160px;margin-top:16px;"></div>
+                            <div id="bookingUsageChart" style="min-height:160px;margin-top:16px;"></div>
                         </div>
                     </div>
                 </div>
@@ -2149,7 +2169,8 @@
                     <div class="form-group"><label>位置</label><input type="text" id="roomEditLocation" class="form-input"></div>
                     <div class="form-group"><label>设备（逗号分隔）</label><input type="text" id="roomEditEquipment" class="form-input"></div>
                     <div class="form-group"><label>描述</label><input type="text" id="roomEditDescription" class="form-input"></div>
-                    <div class="form-group"><label><input type="checkbox" id="roomEditIsVip"> VIP会议室</label></div>
+                    <div class="form-group"><label>类型</label><select id="roomEditType" class="form-input" onchange="document.getElementById('roomEditIsVip').checked=this.value==='vip'"><option value="normal">普通会议室</option><option value="training">培训室</option><option value="vip">VIP会议室</option></select></div>
+                    <div class="form-group" style="display:none;"><label><input type="checkbox" id="roomEditIsVip"> VIP会议室</label></div>
                     <div class="form-group"><label><input type="checkbox" id="roomEditIsActive" checked> 启用</label></div>
                     <div class="room-edit-actions">
                         <button style="padding:10px 24px;background:#f5f5f5;border:none;border-radius:8px;cursor:pointer;" onclick="app.closeRoomEditModal()">取消</button>

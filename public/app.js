@@ -30,12 +30,13 @@ const API = {
     createBooking: (data) => API.request('/api/bookings', { method: 'POST', body: JSON.stringify(data) }),
     cancelBooking: (id) => API.request(`/api/bookings/${id}/cancel`, { method: 'PUT' }),
     getTodayBookings: (date) => API.request(`/api/bookings/today${date ? '?date=' + date : ''}`),
-    getUsers: () => API.request('/api/admin/users'),
+    getUsers: (search = '') => API.request(`/api/admin/users${search ? '?' + new URLSearchParams({ search }).toString() : ''}`),
     updateUserRole: (id, role) => API.request(`/api/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
     updateUser: (id, data) => API.request(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     deleteUser: (id) => API.request(`/api/admin/users/${id}`, { method: 'DELETE' }),
     toggleUserActive: (id) => API.request(`/api/admin/users/${id}/toggle-active`, { method: 'PUT' }),
     resetPassword: (id, newPassword) => API.request(`/api/admin/users/${id}/reset-password`, { method: 'PUT', body: JSON.stringify({ newPassword }) }),
+    importUsers: (text) => API.request('/api/admin/users/import', { method: 'POST', body: JSON.stringify({ text }) }),
     getStats: () => API.request('/api/admin/stats'),
     getLogs: () => API.request('/api/admin/logs'),
     getReports: (params) => API.request(`/api/admin/reports?${new URLSearchParams(params).toString()}`),
@@ -69,6 +70,7 @@ const app = {
     weekBookings: [],
     currentReportPeriod: { year: new Date().getFullYear(), month: new Date().getMonth() + 1 },
     reportData: null,
+    adminUsers: [],
     currentAdminTab: 'rooms',
 
     // ==================== 初始化 ====================
@@ -168,6 +170,28 @@ const app = {
 
     getRoomTypeLabel(roomOrType) {
         return ROOM_TYPE_LABELS[this.normalizeRoomType(roomOrType)] || ROOM_TYPE_LABELS.normal;
+    },
+
+    escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    },
+
+    getUserDisplayName(user) {
+        const parts = [user.english_name || user.englishName, user.last_name || user.lastName]
+            .map(part => String(part || '').trim())
+            .filter(Boolean);
+        return parts.length > 0 ? parts.join(' ') : (user.name || '-');
+    },
+
+    formatBookingPermissions(value) {
+        const permissions = this.parseBookingPermissions(value);
+        return permissions.length > 0 ? permissions.map(type => this.getRoomTypeLabel(type)).join('、') : '-';
     },
 
     updateRoomTypeFilterButtons() {
@@ -930,9 +954,9 @@ const app = {
         tbody.innerHTML = rooms.map(room => {
             const eq = typeof room.equipment === 'string' ? JSON.parse(room.equipment || '[]') : (room.equipment || []);
             const eqStr = eq.slice(0, 3).join(', ') + (eq.length > 3 ? '...' : '');
+            const roomType = this.normalizeRoomType(room);
             return `<tr class="room-table-row">
-                <td><strong>${room.name}</strong></td><td>${room.capacity}人</td><td>${room.floor || '-'}</td><td>${room.location || '-'}</td><td>${eqStr}</td>
-                <td>${room.is_vip ? '<span class="vip-badge-small">VIP</span>' : '-'}</td>
+                <td><strong>${room.name}</strong></td><td>${roomType === 'vip' ? '<span class="vip-badge-small">VIP</span>' : this.getRoomTypeLabel(roomType)}</td><td>${room.capacity}人</td><td>${room.floor || '-'}</td><td>${room.location || '-'}</td><td>${eqStr}</td>
                 <td><span class="status-badge ${room.is_active ? 'active' : 'inactive'}">${room.is_active ? '启用' : '停用'}</span></td>
                 <td class="room-table-actions"><button class="btn-edit" onclick="app.editRoom(${room.id})">编辑</button><button class="btn-delete" onclick="app.confirmDeleteRoom(${room.id})">删除</button></td></tr>`;
         }).join('');
@@ -941,21 +965,43 @@ const app = {
     async renderAdminUserTable() {
         const tbody = document.getElementById('adminUserTableBody');
         if (!tbody) return;
+        const search = document.getElementById('adminUserSearch')?.value.trim() || '';
         let users = [];
-        try { const res = await API.getUsers(); if (res.code === 0) users = res.data; } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px">加载失败</td></tr>';
+        try {
+            const res = await API.getUsers(search);
+            if (res.code === 0) users = Array.isArray(res.data) ? res.data : (res.data?.users || []);
+            this.adminUsers = users;
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px">加载失败</td></tr>';
             return;
         }
-        tbody.innerHTML = users.map(user => `<tr>
-            <td><div class="user-table-avatar">${user.avatar || user.name.charAt(0)}</div></td>
-            <td><strong>${user.name}</strong></td><td>${user.phone || '-'}</td>
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text-secondary)">暂无用户</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map(user => {
+            const displayName = this.getUserDisplayName(user);
+            const avatarText = user.avatar || String(user.name || displayName || '?').charAt(0);
+            const canDelete = user.role !== 'admin' || user.id !== this.currentUser?.id;
+            const isActive = user.is_active !== false;
+            return `<tr>
+            <td><div class="user-table-avatar">${this.escapeHtml(avatarText)}</div></td>
+            <td><strong>${this.escapeHtml(user.name || '-')}</strong></td>
+            <td>${this.escapeHtml(displayName)}</td>
+            <td>${this.escapeHtml(user.phone || '-')}</td>
             <td><select class="role-select" onchange="app.changeUserRole(${user.id}, this.value)">
                 <option value="normal" ${user.role === 'normal' ? 'selected' : ''}>普通员工</option>
                 <option value="premium" ${user.role === 'premium' ? 'selected' : ''}>高级员工</option>
                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理员</option></select></td>
-            <td><span class="status-badge ${user.is_active !== false ? 'active' : 'inactive'}">${user.is_active !== false ? '正常' : '禁用'}</span></td>
+            <td>${this.escapeHtml(user.region || '-')}</td>
+            <td>${this.escapeHtml(user.group_name || user.groupName || '-')}</td>
+            <td>${this.escapeHtml(this.formatBookingPermissions(user.booking_permissions))}</td>
+            <td>${user.daily_booking_limit_minutes ? `${Number(user.daily_booking_limit_minutes)}分钟` : '-'}</td>
+            <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '正常' : '禁用'}</span></td>
+            <td><button class="btn-edit" onclick="app.resetUserPassword(${user.id})">重置</button></td>
             <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
-            <td>${(user.role !== 'admin' || user.id !== this.currentUser?.id) ? `<button class="btn-delete" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : '-'}</td></tr>`).join('');
+            <td><button class="btn-edit" onclick="app.editUser(${user.id})">编辑</button><button class="btn-edit" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>${canDelete ? `<button class="btn-delete" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}</td></tr>`;
+        }).join('');
     },
 
     // ==================== 会议室编辑弹窗 ====================
@@ -971,7 +1017,9 @@ const app = {
             document.getElementById('roomEditLocation').value = room ? (room.location || '') : '';
             document.getElementById('roomEditEquipment').value = room ? (Array.isArray(room.equipment) ? room.equipment.join(', ') : (typeof room.equipment === 'string' ? room.equipment : '')) : '';
             document.getElementById('roomEditDescription').value = room ? (room.description || '') : '';
-            document.getElementById('roomEditIsVip').checked = room ? (room.is_vip || false) : false;
+            const roomType = room ? this.normalizeRoomType(room) : 'normal';
+            document.getElementById('roomEditType').value = roomType;
+            document.getElementById('roomEditIsVip').checked = roomType === 'vip';
             document.getElementById('roomEditIsActive').checked = room ? (room.is_active !== false) : true;
             modal.style.display = 'flex';
         } catch(e) { alert('弹窗错误: ' + e.message); }
@@ -986,6 +1034,7 @@ const app = {
     async handleRoomSubmit(e) {
         if (e) e.preventDefault();
         const id = document.getElementById('roomEditId').value;
+        const roomType = this.normalizeRoomType(document.getElementById('roomEditType')?.value || (document.getElementById('roomEditIsVip').checked ? 'vip' : 'normal'));
         const data = {
             name: document.getElementById('roomEditName').value,
             capacity: parseInt(document.getElementById('roomEditCapacity').value),
@@ -993,7 +1042,8 @@ const app = {
             location: document.getElementById('roomEditLocation').value,
             equipment: document.getElementById('roomEditEquipment').value.split(',').map(s => s.trim()).filter(s => s),
             description: document.getElementById('roomEditDescription').value,
-            is_vip: document.getElementById('roomEditIsVip').checked,
+            room_type: roomType,
+            is_vip: roomType === 'vip',
             is_active: document.getElementById('roomEditIsActive').checked
         };
         try {
@@ -1020,6 +1070,135 @@ const app = {
         try { const res = await API.updateUserRole(userId, newRole); if (res.code === 0) { this.showToast('更新成功', 'success'); this.renderAdminUserTable(); } else this.showError('更新失败', res.message); } catch (e) { this.showError('更新失败', '网络错误'); }
     },
 
+    async editUser(userId) {
+        const search = document.getElementById('adminUserSearch')?.value.trim() || '';
+        let user = this.adminUsers.find(item => item.id === userId);
+        if (!user) {
+            try {
+                const res = await API.getUsers(search);
+                const users = res.code === 0 ? (Array.isArray(res.data) ? res.data : (res.data?.users || [])) : [];
+                user = users.find(item => item.id === userId);
+            } catch (e) {
+                this.showError('加载失败', '无法加载用户信息');
+                return;
+            }
+        }
+        if (!user) { this.showError('加载失败', '未找到用户'); return; }
+
+        const promptValue = (label, value) => {
+            const nextValue = prompt(label, value ?? '');
+            return nextValue === null ? null : nextValue.trim();
+        };
+        const data = {};
+        const fields = [
+            ['name', '姓名', user.name],
+            ['phone', '手机', user.phone],
+            ['role', '角色（normal/premium/admin）', user.role || 'normal'],
+            ['gender', '性别', user.gender || ''],
+            ['english_name', '英文名', user.english_name || user.englishName || ''],
+            ['last_name', '英文姓氏', user.last_name || user.lastName || ''],
+            ['region', '地区', user.region || ''],
+            ['group_name', '组别', user.group_name || user.groupName || '']
+        ];
+        for (const [key, label, value] of fields) {
+            const nextValue = promptValue(label, value);
+            if (nextValue === null) return;
+            data[key] = nextValue;
+        }
+
+        const permissionsValue = promptValue('预订权限（normal,training,vip，用逗号分隔）', this.parseBookingPermissions(user.booking_permissions).join(','));
+        if (permissionsValue === null) return;
+        data.booking_permissions = this.parseBookingPermissions(permissionsValue);
+
+        const limitValue = promptValue('每日预订上限（分钟，留空为不限）', user.daily_booking_limit_minutes ?? '');
+        if (limitValue === null) return;
+        data.daily_booking_limit_minutes = limitValue === '' ? null : Number(limitValue);
+        if (limitValue !== '' && (!Number.isFinite(data.daily_booking_limit_minutes) || data.daily_booking_limit_minutes < 0)) {
+            this.showError('更新失败', '每日上限必须是非负数字');
+            return;
+        }
+
+        const activeValue = promptValue('是否启用（true/false）', user.is_active !== false ? 'true' : 'false');
+        if (activeValue === null) return;
+        data.is_active = !['false', '0', 'no', '否', '禁用'].includes(activeValue.toLowerCase());
+
+        try {
+            const res = await API.updateUser(userId, data);
+            if (res.code === 0) {
+                this.showToast('用户已更新', 'success');
+                this.renderAdminUserTable();
+            } else {
+                this.showError('更新失败', res.message || '请稍后重试');
+            }
+        } catch (e) {
+            this.showError('更新失败', '网络错误');
+        }
+    },
+
+    async toggleUserActive(userId) {
+        try {
+            const res = await API.toggleUserActive(userId);
+            if (res.code === 0) {
+                this.showToast('用户状态已更新', 'success');
+                this.renderAdminUserTable();
+            } else {
+                this.showError('更新失败', res.message || '请稍后重试');
+            }
+        } catch (e) {
+            this.showError('更新失败', '网络错误');
+        }
+    },
+
+    async resetUserPassword(userId) {
+        const newPassword = prompt('请输入新密码');
+        if (newPassword === null) return;
+        if (!newPassword.trim()) { this.showError('重置失败', '新密码不能为空'); return; }
+        try {
+            const res = await API.resetPassword(userId, newPassword.trim());
+            if (res.code === 0) this.showToast('密码已重置', 'success');
+            else this.showError('重置失败', res.message || '请稍后重试');
+        } catch (e) {
+            this.showError('重置失败', '网络错误');
+        }
+    },
+
+    async importUsersFromText() {
+        const textarea = document.getElementById('userImportText');
+        const text = textarea?.value.trim() || '';
+        if (!text) { this.showError('导入失败', '请先粘贴用户数据'); return; }
+        try {
+            const res = await API.importUsers(text);
+            if (res.code === 0) {
+                const result = res.data || {};
+                const imported = result.imported ?? result.created ?? result.success ?? 0;
+                const updated = result.updated ?? 0;
+                const skipped = result.skipped ?? 0;
+                const errors = Array.isArray(result.errors) ? result.errors : [];
+                this.showToast(`导入完成：新增${imported}，更新${updated}，跳过${skipped}`, errors.length ? 'info' : 'success');
+                if (errors.length) alert(`导入错误：\n${errors.join('\n')}`);
+                this.renderAdminUserTable();
+            } else {
+                this.showError('导入失败', res.message || '请检查导入数据');
+            }
+        } catch (e) {
+            this.showError('导入失败', '网络错误');
+        }
+    },
+
+    importUsersFromFile() {
+        const input = document.getElementById('userImportFile');
+        const textarea = document.getElementById('userImportText');
+        const file = input?.files?.[0];
+        if (!file) { this.showError('导入失败', '请选择导入文件'); return; }
+        const reader = new FileReader();
+        reader.onload = async () => {
+            if (textarea) textarea.value = String(reader.result || '');
+            await this.importUsersFromText();
+        };
+        reader.onerror = () => this.showError('导入失败', '无法读取文件');
+        reader.readAsText(file);
+    },
+
     async confirmDeleteUser(userId) {
         if (!confirm('确定要删除这个用户吗？此操作不可撤销。')) return;
         try { const res = await API.deleteUser(userId); if (res.code === 0) { this.showToast('删除成功', 'success'); this.renderAdminUserTable(); } else this.showError('删除失败', res.message); } catch (e) { this.showError('删除失败', '网络错误'); }
@@ -1035,17 +1214,40 @@ const app = {
 
     renderReports() {
         if (!this.reportData) return;
-        document.getElementById('reportPeriod').textContent = `${this.currentReportPeriod.year}年${this.currentReportPeriod.month}月`;
-        // 会议室使用排行
+        const periodEl = document.getElementById('reportPeriod');
+        if (periodEl) periodEl.textContent = `${this.currentReportPeriod.year}年${this.currentReportPeriod.month}月`;
+        const getCount = item => Number(item.booking_count ?? item.total_bookings ?? item.count ?? 0);
+        const renderRanking = (container, title, items, labelBuilder, barColor = 'var(--primary)') => {
+            if (!container) return;
+            const rankedItems = items.filter(item => getCount(item) > 0);
+            if (rankedItems.length === 0) {
+                container.innerHTML = `<div style="font-weight:600;margin-bottom:8px;">${title}</div><div style="text-align:center;padding:40px;color:var(--text-secondary)">暂无数据</div>`;
+                return;
+            }
+            const max = Math.max(...rankedItems.map(getCount));
+            container.innerHTML = `<div style="font-weight:600;margin-bottom:8px;">${title}</div><div class="chart-container">${rankedItems.slice(0, 10).map((item, i) => {
+                const count = getCount(item);
+                return `<div class="chart-row"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${count / max * 100}%;background:${barColor}"></div><span class="chart-value">${count}次</span></div></div>`;
+            }).join('')}</div>`;
+        };
+
         const roomContainer = document.getElementById('roomUsageChart');
-        const rooms = (this.reportData.roomUsage || []).filter(r => r.booking_count > 0);
-        if (rooms.length === 0) { roomContainer.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">暂无数据</div>'; }
-        else { const max = Math.max(...rooms.map(r => r.booking_count)); roomContainer.innerHTML = `<div class="chart-container">${rooms.slice(0, 10).map((r, i) => `<div class="chart-row"><div class="chart-label">${i + 1}. ${r.name}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${r.booking_count / max * 100}%"></div><span class="chart-value">${r.booking_count}次</span></div></div>`).join('')}</div>`; }
-        // 用户使用排行
+        const rooms = this.reportData.roomUsage || this.reportData.rooms || [];
+        renderRanking(roomContainer, '会议室使用排行', rooms, room => `${room.name || room.room_name || '-'} · ${this.getRoomTypeLabel(room)}`);
+
         const userContainer = document.getElementById('userUsageChart');
-        const users = (this.reportData.userUsage || []).filter(u => u.booking_count > 0);
-        if (users.length === 0) { userContainer.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">暂无数据</div>'; }
-        else { const max = Math.max(...users.map(u => u.booking_count)); userContainer.innerHTML = `<div class="chart-container">${users.slice(0, 10).map((u, i) => `<div class="chart-row"><div class="chart-label">${i + 1}. ${u.name}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${u.booking_count / max * 100}%;background:linear-gradient(90deg,#4A90D9,#357ABD)"></div><span class="chart-value">${u.booking_count}次</span></div></div>`).join('')}</div>`; }
+        const users = this.reportData.userUsage || this.reportData.users || [];
+        renderRanking(userContainer, '用户使用排行', users, user => {
+            const profile = [user.region, user.group_name || user.groupName, user.english_name || user.englishName, user.last_name || user.lastName]
+                .map(part => String(part || '').trim())
+                .filter(Boolean)
+                .join(' ');
+            return profile ? `${user.name || user.user_name || '-'} · ${profile}` : (user.name || user.user_name || '-');
+        }, 'linear-gradient(90deg,#4A90D9,#357ABD)');
+
+        const bookingContainer = document.getElementById('bookingUsageChart');
+        const bookings = this.reportData.bookingUsage || this.reportData.bookingReports || this.reportData.bookings || [];
+        renderRanking(bookingContainer, '预订排行', bookings, booking => booking.title || booking.room_name || booking.roomName || booking.date || booking.booking_date || '-');
     },
 
     changeReportMonth(delta) {

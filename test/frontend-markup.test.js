@@ -59,6 +59,16 @@ test('booking page exposes room type filters and 24-hour behavior hooks', () => 
     assert.match(appJs, /generateTimeSlots/);
 });
 
+test('admin page exposes V2 user and room administration anchors', () => {
+    assert.match(html, /adminUserSearch/);
+    assert.match(html, /userImportText/);
+    assert.match(html, /userImportFile/);
+    assert.match(html, /roomEditType/);
+    assert.match(appJs, /importUsersFromText/);
+    assert.match(appJs, /toggleUserActive/);
+    assert.match(appJs, /resetUserPassword/);
+});
+
 test('booking controls normalize API time values and enforce contiguous slots', () => {
     assert.match(appJs, /timeToMinutes/);
     assert.match(appJs, /isSlotOccupied/);
