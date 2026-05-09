@@ -12,6 +12,13 @@ const {
     buildImportedUserRecord,
     disableUserAndCancelFutureBookings
 } = require('./src/userService');
+const {
+    hasRoomTypePermission,
+    normalizeRoomType,
+    rangesOverlap,
+    validateBookingInput,
+    wouldExceedDailyLimit
+} = require('./src/bookingRules');
 require('dotenv').config();
 
 const app = express();
@@ -819,7 +826,8 @@ app.get('/api/bookings', requireAuth, async (req, res) => {
     
     try {
         let sql = `
-            SELECT b.*, r.name as room_name, r.capacity as room_capacity, u.name as user_name 
+            SELECT b.*, r.name as room_name, r.capacity as room_capacity, r.room_type,
+                   u.name as user_name, u.english_name, u.last_name, u.region, u.group_name
             FROM bookings b 
             JOIN meeting_rooms r ON b.room_id = r.id 
             JOIN users u ON b.user_id = u.userid 
@@ -897,42 +905,78 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
     const { room_id, booking_date, start_time, end_time, title, attendees, attendee_count, remark } = req.body;
     
     try {
+        const [users] = await pool.execute('SELECT * FROM users WHERE id = ?', [req.session.user.id]);
+        if (users.length === 0) {
+            req.session.destroy(() => {});
+            return res.status(401).json({ code: 401, message: '账号不存在，请重新登录' });
+        }
+        if (!toBoolean(users[0].is_active, true)) {
+            req.session.destroy(() => {});
+            return res.status(403).json({ code: 403, message: '账号已停用，请联系管理员' });
+        }
+
+        const currentUser = buildSessionUser(users[0]);
+        req.session.user = currentUser;
+
         // 检查会议室是否存在
         const [rooms] = await pool.execute('SELECT * FROM meeting_rooms WHERE id = ? AND is_active = TRUE', [room_id]);
         if (rooms.length === 0) {
             return res.status(404).json({ code: 404, message: '会议室不存在' });
         }
         
-        const room = rooms[0];
-        
-        // 检查VIP权限
-        if (room.is_vip && req.session.user.role === 'normal') {
-            return res.status(403).json({ code: 403, message: 'VIP会议室需要升级权限' });
+        const room = {
+            ...rooms[0],
+            room_type: normalizeRoomType(rooms[0])
+        };
+
+        const validation = validateBookingInput({
+            booking_date,
+            start_time,
+            end_time,
+            title,
+            attendee_count,
+            today: getTodayDateString(),
+            roomCapacity: room.capacity
+        });
+        if (!validation.valid) {
+            return res.status(400).json({ code: 400, message: validation.message });
         }
-        
-        // 检查时间段是否冲突
-        const [conflicts] = await pool.execute(
-            `SELECT COUNT(*) as count FROM bookings 
-             WHERE room_id = ? AND booking_date = ? AND status = 'confirmed'
-             AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?) OR (start_time >= ? AND end_time <= ?))`,
-            [room_id, booking_date, end_time, start_time, end_time, start_time, start_time, end_time]
+
+        if (!hasRoomTypePermission(currentUser, room)) {
+            return res.status(403).json({ code: 403, message: '没有权限预订该类型房间' });
+        }
+
+        const [roomBookings] = await pool.execute(
+            `SELECT start_time, end_time FROM bookings
+             WHERE room_id = ? AND booking_date = ? AND status = 'confirmed'`,
+            [room_id, booking_date]
         );
         
-        if (conflicts[0].count > 0) {
+        if (roomBookings.some(booking => rangesOverlap(start_time, end_time, booking.start_time, booking.end_time))) {
             return res.status(400).json({ code: 400, message: '该时间段已被预订' });
         }
-        
-        // 检查容量
-        if (attendee_count > room.capacity) {
-            return res.status(400).json({ code: 400, message: `超出会议室容量限制（最大${room.capacity}人）` });
+
+        const [userBookings] = await pool.execute(
+            `SELECT start_time, end_time FROM bookings
+             WHERE user_id = ? AND booking_date = ? AND status = 'confirmed'`,
+            [currentUser.userid, booking_date]
+        );
+
+        if (userBookings.some(booking => rangesOverlap(start_time, end_time, booking.start_time, booking.end_time))) {
+            return res.status(400).json({ code: 400, message: '同一时间不能预订两间房' });
+        }
+
+        if (wouldExceedDailyLimit(userBookings, start_time, end_time, currentUser.daily_booking_limit_minutes)) {
+            return res.status(400).json({ code: 400, message: '该用户今日预订总时长已超过上限' });
         }
         
         const bookingNo = generateBookingNo();
+        const attendeeCount = Number(attendee_count);
         
         const [result] = await pool.execute(
             `INSERT INTO bookings (booking_no, room_id, user_id, booking_date, start_time, end_time, title, attendees, attendee_count, remark) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [bookingNo, room_id, req.session.user.userid, booking_date, start_time, end_time, title, JSON.stringify(attendees || []), attendee_count || 0, remark || null]
+            [bookingNo, room_id, currentUser.userid, booking_date, start_time, end_time, title, JSON.stringify(attendees || []), attendeeCount, remark || null]
         );
         
         res.json({ code: 0, data: { id: result.insertId, booking_no: bookingNo }, message: '预订成功' });
@@ -1302,7 +1346,7 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
         
         // 1. 各会议室使用次数排行
         const [roomUsage] = await pool.execute(`
-            SELECT r.id, r.name, r.is_vip, COUNT(b.id) as booking_count,
+            SELECT r.id, r.name, r.is_vip, r.room_type, COUNT(b.id) as booking_count,
                    SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes
             FROM meeting_rooms r
             LEFT JOIN bookings b ON r.id = b.room_id 
@@ -1315,7 +1359,8 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
         
         // 2. 用户使用排行
         const [userUsage] = await pool.execute(`
-            SELECT u.id, u.userid, u.name, COUNT(b.id) as booking_count,
+            SELECT u.id, u.userid, u.name, u.english_name, u.last_name, u.region, u.group_name,
+                   COUNT(b.id) as booking_count,
                    SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time)) as total_minutes
             FROM users u
             LEFT JOIN bookings b ON u.userid = b.user_id 
@@ -1398,7 +1443,7 @@ app.get('/api/admin/reports/export', requireAdmin, async (req, res) => {
         if (type === 'room') {
             // 会议室使用统计
             const [rows] = await pool.execute(`
-                SELECT r.name as '会议室名称', r.capacity as '容量', 
+                SELECT r.name as '会议室名称', r.capacity as '容量', r.room_type as '房间类型',
                        COUNT(b.id) as '预订次数',
                        ROUND(SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time))/60, 1) as '使用时长(小时)',
                        CASE r.is_vip WHEN 1 THEN 'VIP' ELSE '普通' END as '类型'
@@ -1413,12 +1458,14 @@ app.get('/api/admin/reports/export', requireAdmin, async (req, res) => {
             
             data = rows;
             filename = `会议室使用统计_${year}${String(month).padStart(2, '0')}.csv`;
-            headers = ['会议室名称', '容量', '预订次数', '使用时长(小时)', '类型'];
+            headers = ['会议室名称', '容量', '房间类型', '预订次数', '使用时长(小时)', '类型'];
             
         } else if (type === 'user') {
             // 用户使用统计
             const [rows] = await pool.execute(`
                 SELECT u.name as '用户姓名', u.phone as '手机号',
+                       u.english_name as '英文名', u.last_name as '姓氏',
+                       u.region as '区域', u.group_name as '组别',
                        COUNT(b.id) as '预订次数',
                        ROUND(SUM(TIMESTAMPDIFF(MINUTE, b.start_time, b.end_time))/60, 1) as '使用时长(小时)'
                 FROM users u
@@ -1431,14 +1478,16 @@ app.get('/api/admin/reports/export', requireAdmin, async (req, res) => {
             
             data = rows;
             filename = `用户使用统计_${year}${String(month).padStart(2, '0')}.csv`;
-            headers = ['用户姓名', '手机号', '预订次数', '使用时长(小时)'];
+            headers = ['用户姓名', '手机号', '英文名', '姓氏', '区域', '组别', '预订次数', '使用时长(小时)'];
             
         } else if (type === 'booking') {
             // 详细预订记录
             const [rows] = await pool.execute(`
-                SELECT b.booking_no as '预订编号', r.name as '会议室', u.name as '预订人',
+                SELECT b.booking_no as '预订编号', r.name as '会议室', r.room_type as '房间类型',
+                       u.name as '预订人', u.region as '区域', u.group_name as '组别',
+                       u.english_name as '英文名', u.last_name as '姓氏',
                        b.booking_date as '日期', b.start_time as '开始时间', b.end_time as '结束时间',
-                       b.title as '会议主题', b.status as '状态'
+                       b.title as '用途', b.attendee_count as '参与人数', b.status as '状态'
                 FROM bookings b
                 JOIN meeting_rooms r ON b.room_id = r.id
                 JOIN users u ON b.user_id = u.userid
@@ -1448,7 +1497,7 @@ app.get('/api/admin/reports/export', requireAdmin, async (req, res) => {
             
             data = rows;
             filename = `预订记录_${year}${String(month).padStart(2, '0')}.csv`;
-            headers = ['预订编号', '会议室', '预订人', '日期', '开始时间', '结束时间', '会议主题', '状态'];
+            headers = ['预订编号', '会议室', '房间类型', '预订人', '区域', '组别', '英文名', '姓氏', '日期', '开始时间', '结束时间', '用途', '参与人数', '状态'];
         }
         
         // 生成CSV内容
@@ -1500,7 +1549,9 @@ app.get('/api/bookings/today', requireAuth, async (req, res) => {
         const queryDate = date || new Date().toISOString().split('T')[0];
         
         const [bookings] = await pool.execute(`
-            SELECT b.*, r.name as room_name, u.name as user_name, u.avatar as user_avatar
+            SELECT b.*, r.name as room_name, r.room_type,
+                   u.name as user_name, u.avatar as user_avatar,
+                   u.english_name, u.last_name, u.region, u.group_name
             FROM bookings b 
             JOIN meeting_rooms r ON b.room_id = r.id 
             JOIN users u ON b.user_id = u.userid 

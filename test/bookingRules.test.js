@@ -23,6 +23,22 @@ test('calculates 24-hour booking minutes and detects overlaps', () => {
   assert.equal(rangesOverlap('23:30:00', '24:00:00', '23:45:00', '24:00:00'), true);
 });
 
+test('detects overlaps across a booking list', () => {
+  const existingBookings = [
+    { room_id: 1, start_time: '10:00', end_time: '11:00' },
+    { room_id: 2, start_time: '14:00', end_time: '15:00' }
+  ];
+
+  assert.equal(
+    existingBookings.some(booking => rangesOverlap('10:30', '11:30', booking.start_time, booking.end_time)),
+    true
+  );
+  assert.equal(
+    existingBookings.every(booking => !rangesOverlap('11:00', '12:00', booking.start_time, booking.end_time)),
+    true
+  );
+});
+
 test('validates purpose, attendee count, horizon, and time range', () => {
   const ok = validateBookingInput({
     booking_date: '2026-05-10',
