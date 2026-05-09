@@ -71,6 +71,24 @@ test('disables user and cancels future confirmed bookings', async () => {
   assert.equal(calls.some(call => call.sql.includes('UPDATE bookings SET status = "cancelled"')), true);
 });
 
+test('future booking cancellation preserves completed same-day bookings', async () => {
+  const calls = [];
+  const fakePool = {
+    async execute(sql, params) {
+      calls.push({ sql, params });
+      if (sql.includes('SELECT id, userid')) return [[{ id: 7, userid: 'USER7', is_active: 1 }]];
+      return [{ affectedRows: 1 }];
+    }
+  };
+
+  await disableUserAndCancelFutureBookings(fakePool, 7, 'ADMIN1', '2026-05-09', '15:30');
+
+  const bookingUpdate = calls.find(call => call.sql.includes('UPDATE bookings SET status = "cancelled"'));
+  assert.match(bookingUpdate.sql, /booking_date > \?/);
+  assert.match(bookingUpdate.sql, /booking_date = \? AND end_time > \?/);
+  assert.deepEqual(bookingUpdate.params, ['ADMIN1', 'USER7', '2026-05-09', '2026-05-09', '15:30']);
+});
+
 test('rolls back and releases transactional disable when booking cancellation fails', async () => {
   const calls = [];
   const cancellationError = new Error('booking update failed');

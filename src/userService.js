@@ -40,22 +40,26 @@ function buildImportedUserRecord(row) {
   };
 }
 
-async function disableUserAndCancelFutureBookingsWithExecutor(executor, userId, actorUserid, today) {
+function getCurrentTimeString() {
+  return new Date().toTimeString().slice(0, 5);
+}
+
+async function disableUserAndCancelFutureBookingsWithExecutor(executor, userId, actorUserid, today, nowTime = getCurrentTimeString()) {
   const [users] = await executor.execute('SELECT id, userid, is_active FROM users WHERE id = ?', [userId]);
   if (users.length === 0) return { disabled: false, message: '用户不存在' };
   if (!users[0].is_active) return { disabled: false, message: '用户已停用' };
 
   await executor.execute('UPDATE users SET is_active = FALSE WHERE id = ?', [userId]);
   await executor.execute(
-    'UPDATE bookings SET status = "cancelled", cancelled_at = NOW(), cancelled_by = ? WHERE user_id = ? AND status = "confirmed" AND booking_date >= ?',
-    [actorUserid, users[0].userid, today]
+    'UPDATE bookings SET status = "cancelled", cancelled_at = NOW(), cancelled_by = ? WHERE user_id = ? AND status = "confirmed" AND (booking_date > ? OR (booking_date = ? AND end_time > ?))',
+    [actorUserid, users[0].userid, today, today, nowTime]
   );
   return { disabled: true, message: '已停用并释放未来预订' };
 }
 
-async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, today) {
+async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, today, nowTime = getCurrentTimeString()) {
   if (typeof pool.getConnection !== 'function') {
-    return disableUserAndCancelFutureBookingsWithExecutor(pool, userId, actorUserid, today);
+    return disableUserAndCancelFutureBookingsWithExecutor(pool, userId, actorUserid, today, nowTime);
   }
 
   const connection = await pool.getConnection();
@@ -63,7 +67,7 @@ async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, tod
   try {
     await connection.beginTransaction();
     began = true;
-    const result = await disableUserAndCancelFutureBookingsWithExecutor(connection, userId, actorUserid, today);
+    const result = await disableUserAndCancelFutureBookingsWithExecutor(connection, userId, actorUserid, today, nowTime);
     await connection.commit();
     return result;
   } catch (error) {
