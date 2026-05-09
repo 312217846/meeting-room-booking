@@ -4,6 +4,8 @@ const { getV2ColumnDefinitions, ensureV2Schema } = require('../src/schema');
 
 test('declares required V2 columns for users and meeting rooms', () => {
   const definitions = getV2ColumnDefinitions();
+  assert.ok(definitions.users.password_hash.includes('VARCHAR(255)'));
+  assert.ok(definitions.users.gender.includes('ENUM'));
   assert.ok(definitions.users.english_name.includes('VARCHAR(100)'));
   assert.ok(definitions.users.booking_permissions.includes('JSON'));
   assert.equal(definitions.users.booking_permissions.includes('DEFAULT (JSON_ARRAY'), false);
@@ -92,12 +94,15 @@ test('upserts V2 config defaults instead of insert ignore', async () => {
   await ensureV2Schema(fakePool);
 
   assert.equal(executed.some(call => call.sql.includes('INSERT IGNORE')), false);
+  assert.equal(executed.some(call => call.sql.includes('config_value = VALUES(config_value)')), false);
   assert.equal(
     executed.some(call =>
       call.sql.includes('INSERT INTO system_config') &&
       call.sql.includes('ON DUPLICATE KEY UPDATE') &&
       call.sql.includes('booking_max_days') &&
-      call.sql.includes('365')
+      call.sql.includes('365') &&
+      call.sql.includes("config_key = 'booking_max_days'") &&
+      call.sql.includes("config_value = '7'")
     ),
     true
   );

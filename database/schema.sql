@@ -117,7 +117,10 @@ INSERT INTO system_config (config_key, config_value, description) VALUES
 ('work_end_time', '18:00', '工作结束时间'),
 ('time_slot_interval', '30', '时间间隔（分钟）')
 ON DUPLICATE KEY UPDATE
-    config_value = VALUES(config_value),
+    config_value = CASE
+        WHEN config_key = 'booking_max_days' AND config_value = '7' THEN VALUES(config_value)
+        ELSE config_value
+    END,
     description = VALUES(description);
 
 -- 插入示例会议室
