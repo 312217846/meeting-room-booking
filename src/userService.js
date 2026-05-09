@@ -47,14 +47,19 @@ function getCurrentTimeString() {
 async function disableUserAndCancelFutureBookingsWithExecutor(executor, userId, actorUserid, today, nowTime = getCurrentTimeString()) {
   const [users] = await executor.execute('SELECT id, userid, is_active FROM users WHERE id = ?', [userId]);
   if (users.length === 0) return { disabled: false, message: '用户不存在' };
-  if (!users[0].is_active) return { disabled: false, message: '用户已停用' };
+  const wasActive = Boolean(users[0].is_active);
 
-  await executor.execute('UPDATE users SET is_active = FALSE WHERE id = ?', [userId]);
+  if (wasActive) {
+    await executor.execute('UPDATE users SET is_active = FALSE WHERE id = ?', [userId]);
+  }
   await executor.execute(
     'UPDATE bookings SET status = "cancelled", cancelled_at = NOW(), cancelled_by = ? WHERE user_id = ? AND status = "confirmed" AND (booking_date > ? OR (booking_date = ? AND end_time > ?))',
     [actorUserid, users[0].userid, today, today, nowTime]
   );
-  return { disabled: true, message: '已停用并释放未来预订' };
+  return {
+    disabled: wasActive,
+    message: wasActive ? '已停用并释放未来预订' : '用户已停用，已释放未来预订'
+  };
 }
 
 async function disableUserAndCancelFutureBookings(pool, userId, actorUserid, today, nowTime = getCurrentTimeString()) {
