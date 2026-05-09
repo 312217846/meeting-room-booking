@@ -1719,13 +1719,18 @@
             font-weight: 600;
             letter-spacing: 0;
         }
-        .pmagic-powered img,
-        .pmagic-powered .pmagic-logo {
-            width: 84px;
-            height: auto;
+        .pmagic-powered .pmagic-mark {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
             display: block;
         }
         .pmagic-powered .powered-text {
+            white-space: nowrap;
+        }
+        .pmagic-powered .pmagic-name {
+            color: #111111;
+            font-weight: 800;
             white-space: nowrap;
         }
         #mainApp .pmagic-powered {
@@ -2180,6 +2185,179 @@
             border-radius: 999px !important;
         }
 
+        .booking-left-column,
+        .booking-right-column {
+            display: grid;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .booking-hours-note {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .admin-action-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .admin-action-btn {
+            min-height: 32px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(191,204,218,0.56);
+            background: rgba(255,255,255,0.66);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.78);
+        }
+
+        .admin-action-btn:hover {
+            border-color: rgba(201,169,110,0.46);
+            box-shadow: 0 8px 18px rgba(95,117,139,0.12), inset 0 1px 0 rgba(255,255,255,0.82);
+        }
+
+        .admin-action-edit,
+        .admin-action-reset {
+            color: var(--gold-deep);
+            background: rgba(201,169,110,0.12);
+        }
+
+        .admin-action-toggle {
+            color: #2D7B6D;
+            background: rgba(49,191,166,0.12);
+        }
+
+        .admin-action-danger {
+            color: #A94040;
+            background: rgba(220,76,76,0.1);
+            border-color: rgba(220,76,76,0.18);
+        }
+
+        .report-toolbar,
+        .report-export-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .report-period-controls,
+        .report-export-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .report-period-label {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .report-kpi-grid,
+        .report-dashboard-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .report-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-bottom: 16px;
+        }
+
+        .report-kpi-card,
+        .report-card {
+            background: rgba(255,255,255,0.66);
+            border: 1px solid rgba(255,255,255,0.76);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: var(--crystal-shadow-soft);
+        }
+
+        .report-kpi-value {
+            font-size: 26px;
+            font-weight: 850;
+            color: var(--text-primary);
+        }
+
+        .report-kpi-label,
+        .report-kpi-sub,
+        .report-card-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .report-card-title {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .report-trend-bars {
+            display: flex;
+            align-items: end;
+            gap: 4px;
+            min-height: 116px;
+            padding-top: 12px;
+        }
+
+        .report-trend-bar {
+            flex: 1;
+            min-width: 8px;
+            border-radius: 999px 999px 4px 4px;
+            background: linear-gradient(180deg, #E5C983, #C9A96E);
+        }
+
+        .chart-container {
+            display: grid;
+            gap: 10px;
+        }
+
+        .chart-row {
+            display: grid;
+            gap: 6px;
+        }
+
+        .chart-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chart-bar-wrapper {
+            position: relative;
+            min-height: 22px;
+            border-radius: 999px;
+            background: rgba(226,232,238,0.52);
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            height: 100%;
+            min-width: 8px;
+            border-radius: 999px;
+        }
+
+        .chart-value {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            font-weight: 800;
+            color: rgba(24,33,43,0.7);
+        }
+
         @media (min-width: 769px) {
             body {
                 background:
@@ -2198,23 +2376,30 @@
                 width: 252px;
                 padding: 26px 18px;
             }
+            .booking-layout {
+                grid-template-columns: minmax(300px, 360px) minmax(0, 760px);
+                max-width: 1180px;
+                align-items: start;
+            }
+            .booking-right-column .booking-section {
+                margin: 0;
+            }
+            .time-slots-grid {
+                grid-template-columns: repeat(4, minmax(112px, 1fr));
+            }
+            .report-kpi-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            .report-dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .report-card.wide {
+                grid-column: 1 / -1;
+            }
         }
     </style>
 </head>
 <body>
-    <svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden">
-        <symbol id="pmagic-ai-logo-symbol" viewBox="0 0 188 44">
-            <g transform="translate(3 4)">
-                <rect x="14" y="-1" width="8" height="38" rx="2" transform="rotate(45 14 -1)" fill="#F4D44D"></rect>
-                <rect x="14" y="-1" width="8" height="38" rx="2" transform="rotate(-45 14 -1)" fill="#EA70B6"></rect>
-                <rect x="0" y="14" width="36" height="8" rx="2" fill="#6A4DF5"></rect>
-                <rect x="14" y="0" width="8" height="36" rx="2" fill="#7F62FF"></rect>
-                <circle cx="18" cy="18" r="5" fill="#FF9C5A"></circle>
-            </g>
-            <text x="50" y="29" fill="#111111" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="23" font-weight="700" letter-spacing="0">PMagic AI</text>
-            <text x="164" y="17" fill="#111111" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="8" font-weight="700">TM</text>
-        </symbol>
-    </svg>
     <div id="app">
         <!-- 登录页 -->
         <div id="loginPage" class="login-page">
@@ -2240,10 +2425,15 @@
                 </div>
             </div>
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
-                <span class="powered-text">Powered by</span>
-                <svg class="pmagic-logo" viewBox="0 0 188 44" role="img" aria-label="PMagic AI">
-                    <use href="#pmagic-ai-logo-symbol"></use>
+                <svg class="pmagic-mark" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+                    <rect x="15" y="1" width="6" height="34" rx="2" fill="#7F62FF"></rect>
+                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(45 18 18)" fill="#F4D44D"></rect>
+                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(-45 18 18)" fill="#EA70B6"></rect>
+                    <rect x="1" y="15" width="34" height="6" rx="2" fill="#6A4DF5"></rect>
+                    <circle cx="18" cy="18" r="4" fill="#FF9C5A"></circle>
                 </svg>
+                <span class="powered-text">Powered by</span>
+                <span class="pmagic-name">PMagic AI</span>
             </div>
         </div>
         
@@ -2336,56 +2526,61 @@
             <!-- 预订页 -->
             <div id="bookingPage" class="page">
                 <div class="booking-layout booking-page">
-                    <div class="booking-section">
-                        <div class="booking-section-title">
-                            <span>📅</span> 选择会议室
-                        </div>
-                        <div class="room-type-filter" id="roomTypeFilter" role="group" aria-label="会议室类型">
-                            <button class="tab-btn active" type="button" data-room-type="normal" onclick="app.setRoomTypeFilter('normal')">会议室</button>
-                            <button class="tab-btn" type="button" data-room-type="training" onclick="app.setRoomTypeFilter('training')">培训室</button>
-                            <button class="tab-btn" type="button" data-room-type="vip" onclick="app.setRoomTypeFilter('vip')">VIP室</button>
-                        </div>
-                        <div class="room-select-container" id="roomSelectContainer"><div id="roomSelectList"></div>
-                            <!-- 动态渲染会议室选择区域 -->
-                        </div>
-                    </div>
-
-                    <div class="booking-section">
-                        <div class="booking-section-title">
-                            <span>📆</span> 选择日期
-                        </div>
-                        <div class="date-selector" id="dateSelector"></div>
-                    </div>
-
-                    <div class="booking-section time-selection-area">
-                        <div class="booking-section-title">
-                            <span>⏰</span> 选择时间段
-                        </div>
-                        <div class="time-slots-grid time-grid" id="timeGrid"></div>
-                    </div>
-
-                    <div class="booking-section">
-                        <div class="booking-section-title">
-                            <span>📝</span> 预订信息
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">预订用途 *</label>
-                            <div class="gender-group">
-                                <label><input type="radio" name="bookingPurpose" value="见客" checked> 见客</label>
-                                <label><input type="radio" name="bookingPurpose" value="招募"> 招募</label>
-                                <label><input type="radio" name="bookingPurpose" value="培训"> 培训</label>
-                                <label><input type="radio" name="bookingPurpose" value="讲座"> 讲座</label>
-                                <label><input type="radio" name="bookingPurpose" value="会议"> 会议</label>
-                                <label><input type="radio" name="bookingPurpose" value="其他"> 其他</label>
+                    <div class="booking-left-column">
+                        <div class="booking-section">
+                            <div class="booking-section-title">
+                                <span>📅</span> 选择会议室
+                            </div>
+                            <div class="room-type-filter" id="roomTypeFilter" role="group" aria-label="会议室类型">
+                                <button class="tab-btn active" type="button" data-room-type="normal" onclick="app.setRoomTypeFilter('normal')">会议室</button>
+                                <button class="tab-btn" type="button" data-room-type="training" onclick="app.setRoomTypeFilter('training')">培训室</button>
+                                <button class="tab-btn" type="button" data-room-type="vip" onclick="app.setRoomTypeFilter('vip')">VIP室</button>
+                            </div>
+                            <div class="room-select-container" id="roomSelectContainer"><div id="roomSelectList"></div>
+                                <!-- 动态渲染会议室选择区域 -->
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">预计人数：<span id="bookingAttendeeCountValue">1</span></label>
-                            <input type="range" class="form-input" id="bookingAttendeeCount" min="1" max="200" value="1">
+
+                        <div class="booking-section">
+                            <div class="booking-section-title">
+                                <span>📆</span> 选择日期
+                            </div>
+                            <div class="date-selector" id="dateSelector"></div>
                         </div>
                     </div>
 
-                    <button class="submit-btn" id="submitBookingBtn" onclick="app.submitBooking()" disabled>确认预订</button>
+                    <div class="booking-right-column">
+                        <div class="booking-section time-selection-area">
+                            <div class="booking-section-title">
+                                <span>⏰</span> 选择时间段
+                            </div>
+                            <div class="time-slots-grid time-grid" id="timeGrid"></div>
+                            <div class="booking-hours-note">可预订时间：08:00-20:00，每次以30分钟为单位。</div>
+                        </div>
+
+                        <div class="booking-section">
+                            <div class="booking-section-title">
+                                <span>📝</span> 预订信息
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">预订用途 *</label>
+                                <div class="gender-group">
+                                    <label><input type="radio" name="bookingPurpose" value="见客" checked> 见客</label>
+                                    <label><input type="radio" name="bookingPurpose" value="招募"> 招募</label>
+                                    <label><input type="radio" name="bookingPurpose" value="培训"> 培训</label>
+                                    <label><input type="radio" name="bookingPurpose" value="讲座"> 讲座</label>
+                                    <label><input type="radio" name="bookingPurpose" value="会议"> 会议</label>
+                                    <label><input type="radio" name="bookingPurpose" value="其他"> 其他</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">预计人数：<span id="bookingAttendeeCountValue">1</span></label>
+                                <input type="range" class="form-input" id="bookingAttendeeCount" min="1" max="200" value="1">
+                            </div>
+                        </div>
+
+                        <button class="submit-btn" id="submitBookingBtn" onclick="app.submitBooking()" disabled>确认预订</button>
+                    </div>
                 </div>
             </div>
 
@@ -2448,26 +2643,46 @@
                             <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>英文名</th><th>手机</th><th>角色</th><th>地区</th><th>组别</th><th>权限</th><th>每日上限</th><th>状态</th><th>重置密码</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-reports" class="admin-tab-content">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-                                <div id="reportPeriod"></div>
-                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="app.exportReport('room')">导出会议室</button>
-                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="app.exportReport('user')">导出用户</button>
-                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="app.exportReport('booking')">导出预订</button>
+                            <div class="report-toolbar">
+                                <div>
+                                    <div class="report-card-subtitle">数据看板</div>
+                                    <div id="reportPeriod" class="report-period-label"></div>
+                                </div>
+                                <div class="report-period-controls">
+                                    <button class="admin-action-btn" type="button" onclick="app.changeReportMonth(-1)">上月</button>
+                                    <button class="admin-action-btn" type="button" onclick="app.changeReportMonth(1)">下月</button>
                                 </div>
                             </div>
-                            <div id="roomUsageChart" style="min-height:160px;"></div>
-                            <div id="userUsageChart" style="min-height:160px;margin-top:16px;"></div>
-                            <div id="bookingUsageChart" style="min-height:160px;margin-top:16px;"></div>
+                            <div class="report-kpi-grid" id="reportKpiGrid"></div>
+                            <div class="report-dashboard-grid" id="reportDashboardGrid">
+                                <div class="report-card" id="roomUsageChart"></div>
+                                <div class="report-card" id="userUsageChart"></div>
+                                <div class="report-card" id="reportPurposeChart"></div>
+                                <div class="report-card" id="bookingUsageChart"></div>
+                                <div class="report-card wide" id="reportDailyTrendChart"></div>
+                            </div>
+                            <div class="report-export-toolbar" id="reportExportToolbar">
+                                <div class="report-card-subtitle">导出当前月份数据</div>
+                                <div class="report-export-actions">
+                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:999px;" onclick="app.exportReport('room')">导出会议室</button>
+                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:999px;" onclick="app.exportReport('user')">导出用户</button>
+                                    <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:999px;" onclick="app.exportReport('booking')">导出预订</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
-                <span class="powered-text">Powered by</span>
-                <svg class="pmagic-logo" viewBox="0 0 188 44" role="img" aria-label="PMagic AI">
-                    <use href="#pmagic-ai-logo-symbol"></use>
+                <svg class="pmagic-mark" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+                    <rect x="15" y="1" width="6" height="34" rx="2" fill="#7F62FF"></rect>
+                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(45 18 18)" fill="#F4D44D"></rect>
+                    <rect x="15" y="1" width="6" height="34" rx="2" transform="rotate(-45 18 18)" fill="#EA70B6"></rect>
+                    <rect x="1" y="15" width="34" height="6" rx="2" fill="#6A4DF5"></rect>
+                    <circle cx="18" cy="18" r="4" fill="#FF9C5A"></circle>
                 </svg>
+                <span class="powered-text">Powered by</span>
+                <span class="pmagic-name">PMagic AI</span>
             </div>
 
             <!-- 底部导航 -->

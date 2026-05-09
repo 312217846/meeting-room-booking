@@ -31,3 +31,10 @@ test('admin reports response includes booking usage ranking data', () => {
   assert.match(serverJs, /u\.region/);
   assert.match(serverJs, /u\.group_name/);
 });
+
+test('admin reports response includes dashboard summary fields', () => {
+  assert.match(serverJs, /activeUsers/);
+  assert.match(serverJs, /activeRooms/);
+  assert.match(serverJs, /peakDay/);
+  assert.match(serverJs, /totalHours/);
+});

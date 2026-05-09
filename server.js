@@ -298,6 +298,18 @@ function buildReportDateRange(yearValue, monthValue) {
     };
 }
 
+function formatReportDateValue(value) {
+    if (!value) return '';
+    if (value instanceof Date) {
+        return [
+            value.getFullYear(),
+            String(value.getMonth() + 1).padStart(2, '0'),
+            String(value.getDate()).padStart(2, '0')
+        ].join('-');
+    }
+    return String(value).slice(0, 10);
+}
+
 function buildSessionUser(user) {
     return {
         id: user.id,
@@ -1492,6 +1504,15 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
             ORDER BY booking_count DESC, total_minutes DESC
             LIMIT 20
         `, [startDate, endDate]);
+
+        const activeUsers = userUsage.filter(row => Number(row.booking_count || 0) > 0).length;
+        const activeRooms = roomUsage.filter(row => Number(row.booking_count || 0) > 0).length;
+        const peakDayRow = dailyTrend.reduce((peak, row) => (
+            Number(row.booking_count || 0) > Number(peak.booking_count || 0) ? row : peak
+        ), {});
+        const peakDay = peakDayRow.booking_date
+            ? `${formatReportDateValue(peakDayRow.booking_date)} ${peakDayRow.booking_count}次`
+            : '';
         
         res.json({
             code: 0,
@@ -1505,7 +1526,10 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
                 totalStats: {
                     totalBookings: totalStats.total_bookings || 0,
                     totalHours: Math.round((totalStats.total_minutes || 0) / 60 * 10) / 10,
-                    avgDuration: Math.round((totalStats.avg_minutes || 0)) || 0
+                    avgDuration: Math.round((totalStats.avg_minutes || 0)) || 0,
+                    activeUsers,
+                    activeRooms,
+                    peakDay
                 }
             }
         });

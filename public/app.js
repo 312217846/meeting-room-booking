@@ -56,6 +56,9 @@ const ROOM_TYPE_LABELS = {
 
 const BOOKING_PURPOSES = ['见客', '招募', '培训', '讲座', '会议', '其他'];
 const MAX_BOOKING_DAYS = 365;
+const BOOKING_START_MINUTES = 8 * 60;
+const BOOKING_END_MINUTES = 20 * 60;
+const BOOKING_SLOT_MINUTES = 30;
 
 // ---- 应用主对象（唯一入口） ----
 const app = {
@@ -121,15 +124,13 @@ const app = {
     getEndTime(startTime) {
         const startMinutes = this.timeToMinutes(startTime);
         if (startMinutes === null) return '';
-        return this.minutesToTime(startMinutes + 30);
+        return this.minutesToTime(startMinutes + BOOKING_SLOT_MINUTES);
     },
 
     generateTimeSlots() {
         const slots = [];
-        for (let hour = 0; hour < 24; hour++) {
-            for (let min = 0; min < 60; min += 30) {
-                slots.push(`${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
-            }
+        for (let minutes = BOOKING_START_MINUTES; minutes < BOOKING_END_MINUTES; minutes += BOOKING_SLOT_MINUTES) {
+            slots.push(this.minutesToTime(minutes));
         }
         return slots;
     },
@@ -263,7 +264,7 @@ const app = {
         return sortedSlots.every((slot, index) => {
             if (this.timeToMinutes(slot) === null) return false;
             if (index === 0) return true;
-            return this.timeToMinutes(slot) - this.timeToMinutes(sortedSlots[index - 1]) === 30;
+            return this.timeToMinutes(slot) - this.timeToMinutes(sortedSlots[index - 1]) === BOOKING_SLOT_MINUTES;
         });
     },
 
@@ -286,7 +287,7 @@ const app = {
 
         const firstMinutes = this.timeToMinutes(sortedSlots[0]);
         const lastMinutes = this.timeToMinutes(sortedSlots[sortedSlots.length - 1]);
-        if (targetMinutes === firstMinutes - 30 || targetMinutes === lastMinutes + 30) return { allowed: true };
+        if (targetMinutes === firstMinutes - BOOKING_SLOT_MINUTES || targetMinutes === lastMinutes + BOOKING_SLOT_MINUTES) return { allowed: true };
         return { allowed: false, message: '请选择相邻的时间段，预订时间必须连续' };
     },
 
@@ -980,7 +981,10 @@ const app = {
             return `<tr class="room-table-row">
                 <td><strong>${room.name}</strong></td><td>${roomType === 'vip' ? '<span class="vip-badge-small">VIP</span>' : this.getRoomTypeLabel(roomType)}</td><td>${room.capacity}人</td><td>${room.floor || '-'}</td><td>${room.location || '-'}</td><td>${eqStr}</td>
                 <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '启用' : '停用'}</span></td>
-                <td class="room-table-actions"><button class="btn-edit" onclick="app.editRoom(${room.id})">编辑</button><button class="btn-delete" onclick="app.confirmDeleteRoom(${room.id})">删除</button></td></tr>`;
+                <td class="room-table-actions"><div class="admin-action-group">
+                    <button class="admin-action-btn admin-action-edit" onclick="app.editRoom(${room.id})">编辑</button>
+                    <button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteRoom(${room.id})">删除</button>
+                </div></td></tr>`;
         }).join('');
     },
 
@@ -1020,9 +1024,13 @@ const app = {
             <td>${this.escapeHtml(this.formatBookingPermissions(user.booking_permissions))}</td>
             <td>${this.escapeHtml(this.formatDailyBookingLimit(user.daily_booking_limit_minutes))}</td>
             <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '正常' : '禁用'}</span></td>
-            <td><button class="btn-edit" onclick="app.resetUserPassword(${user.id})">重置</button></td>
+            <td><button class="admin-action-btn admin-action-reset" onclick="app.resetUserPassword(${user.id})">重置</button></td>
             <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
-            <td><button class="btn-edit" onclick="app.editUser(${user.id})">编辑</button><button class="btn-edit" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>${canDelete ? `<button class="btn-delete" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}</td></tr>`;
+            <td><div class="admin-action-group">
+                <button class="admin-action-btn admin-action-edit" onclick="app.editUser(${user.id})">编辑</button>
+                <button class="admin-action-btn admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
+                ${canDelete ? `<button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
+            </div></td></tr>`;
         }).join('');
     },
 
@@ -1238,16 +1246,18 @@ const app = {
         if (!this.reportData) return;
         const periodEl = document.getElementById('reportPeriod');
         if (periodEl) periodEl.textContent = `${this.currentReportPeriod.year}年${this.currentReportPeriod.month}月`;
+        this.renderReportKpis();
+
         const getCount = item => Number(item.booking_count ?? item.total_bookings ?? item.count ?? 0);
         const renderRanking = (container, title, items, labelBuilder, barColor = 'var(--primary)') => {
             if (!container) return;
             const rankedItems = items.filter(item => getCount(item) > 0);
             if (rankedItems.length === 0) {
-                container.innerHTML = `<div style="font-weight:600;margin-bottom:8px;">${title}</div><div style="text-align:center;padding:40px;color:var(--text-secondary)">暂无数据</div>`;
+                container.innerHTML = `<div class="report-card-title">${title}</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>`;
                 return;
             }
             const max = Math.max(...rankedItems.map(getCount));
-            container.innerHTML = `<div style="font-weight:600;margin-bottom:8px;">${title}</div><div class="chart-container">${rankedItems.slice(0, 10).map((item, i) => {
+            container.innerHTML = `<div class="report-card-title">${title}</div><div class="chart-container">${rankedItems.slice(0, 10).map((item, i) => {
                 const count = getCount(item);
                 return `<div class="chart-row"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${count / max * 100}%;background:${barColor}"></div><span class="chart-value">${count}次</span></div></div>`;
             }).join('')}</div>`;
@@ -1267,9 +1277,52 @@ const app = {
             return profile ? `${user.name || user.user_name || '-'} · ${profile}` : (user.name || user.user_name || '-');
         }, 'linear-gradient(90deg,#4A90D9,#357ABD)');
 
-        const bookingContainer = document.getElementById('bookingUsageChart');
         const bookings = this.reportData.bookingUsage || this.reportData.bookingReports || this.reportData.bookings || [];
-        renderRanking(bookingContainer, '预订排行', bookings, booking => booking.title || booking.room_name || booking.roomName || booking.date || booking.booking_date || '-');
+        renderRanking(document.getElementById('reportPurposeChart'), '用途分布', bookings, booking => `${booking.title || '-'} · ${this.getRoomTypeLabel(booking.room_type || booking)}`, 'linear-gradient(90deg,#31BFA6,#1D9B87)');
+        renderRanking(document.getElementById('bookingUsageChart'), '预订排行', bookings, booking => booking.title || booking.room_name || booking.roomName || booking.date || booking.booking_date || '-');
+        this.renderReportTrend();
+    },
+
+    renderReportKpis() {
+        const container = document.getElementById('reportKpiGrid');
+        if (!container || !this.reportData) return;
+        const stats = this.reportData.totalStats || {};
+        const countActive = items => (items || []).filter(item => Number(item.booking_count ?? item.total_bookings ?? item.count ?? 0) > 0).length;
+        const activeUsers = stats.activeUsers ?? countActive(this.reportData.userUsage || this.reportData.users);
+        const activeRooms = stats.activeRooms ?? countActive(this.reportData.roomUsage || this.reportData.rooms);
+        const cards = [
+            ['总预订', stats.totalBookings || 0, '当前月份确认预订'],
+            ['总时长', `${stats.totalHours || 0}h`, `平均 ${stats.avgDuration || 0} 分钟`],
+            ['活跃用户', activeUsers || 0, '有预订记录的用户'],
+            ['使用房间', activeRooms || 0, stats.peakDay ? `峰值 ${stats.peakDay}` : '当前月份']
+        ];
+        container.innerHTML = cards.map(([label, value, sub]) => `
+            <div class="report-kpi-card">
+                <div class="report-kpi-value">${this.escapeHtml(value)}</div>
+                <div class="report-kpi-label">${this.escapeHtml(label)}</div>
+                <div class="report-kpi-sub">${this.escapeHtml(sub)}</div>
+            </div>
+        `).join('');
+    },
+
+    renderReportTrend() {
+        const container = document.getElementById('reportDailyTrendChart');
+        if (!container || !this.reportData) return;
+        const trend = this.reportData.dailyTrend || [];
+        const values = trend.map(item => Number(item.booking_count || 0));
+        if (values.length === 0 || Math.max(...values) === 0) {
+            container.innerHTML = '<div class="report-card-title">每日趋势</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>';
+            return;
+        }
+        const max = Math.max(...values);
+        container.innerHTML = `<div class="report-card-title">每日趋势</div>
+            <div class="report-card-subtitle">按日期查看当前月份预订热度</div>
+            <div class="report-trend-bars">${trend.map(item => {
+                const count = Number(item.booking_count || 0);
+                const height = Math.max(8, Math.round(count / max * 100));
+                const label = String(item.booking_date || '').slice(5);
+                return `<div class="report-trend-bar" title="${this.escapeHtml(label)} ${count}次" style="height:${height}%"></div>`;
+            }).join('')}</div>`;
     },
 
     changeReportMonth(delta) {

@@ -1,4 +1,10 @@
-const { BOOKING_PURPOSES, MAX_BOOKING_DAYS } = require('./constants');
+const {
+  BOOKING_PURPOSES,
+  BOOKING_START_MINUTES,
+  BOOKING_END_MINUTES,
+  BOOKING_SLOT_MINUTES,
+  MAX_BOOKING_DAYS
+} = require('./constants');
 
 function parsePermissions(value) {
   if (Array.isArray(value)) return value;
@@ -38,6 +44,17 @@ function rangesOverlap(startA, endA, startB, endB) {
   return toMinutes(startA) < toMinutes(endB) && toMinutes(endA) > toMinutes(startB);
 }
 
+function isWithinBookingHours(startTime, endTime) {
+  const start = toMinutes(startTime);
+  const end = toMinutes(endTime);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+  return start >= BOOKING_START_MINUTES
+    && end <= BOOKING_END_MINUTES
+    && start < end
+    && start % BOOKING_SLOT_MINUTES === 0
+    && end % BOOKING_SLOT_MINUTES === 0;
+}
+
 function daysBetween(startDate, endDate) {
   const start = new Date(`${startDate}T00:00:00`);
   const end = new Date(`${endDate}T00:00:00`);
@@ -64,6 +81,7 @@ function validateBookingInput({ booking_date, start_time, end_time, title, atten
   if (roomCapacity && count > Number(roomCapacity)) return { valid: false, message: `超出会议室容量限制（最大${roomCapacity}人）` };
   const duration = minutesBetween(start_time, end_time);
   if (!Number.isFinite(duration) || duration <= 0) return { valid: false, message: '结束时间必须晚于开始时间' };
+  if (!isWithinBookingHours(start_time, end_time)) return { valid: false, message: '预订时间仅支持08:00-20:00办公时间' };
   if (!isValidDate(today) || !isValidDate(booking_date)) return { valid: false, message: '预订日期格式不正确' };
   const horizon = daysBetween(today, booking_date);
   if (horizon < 0) return { valid: false, message: '不能预订过去日期' };
@@ -86,6 +104,7 @@ module.exports = {
   toMinutes,
   minutesBetween,
   rangesOverlap,
+  isWithinBookingHours,
   validateBookingInput,
   wouldExceedDailyLimit
 };

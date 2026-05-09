@@ -8,6 +8,7 @@ const {
   validateBookingInput,
   wouldExceedDailyLimit
 } = require('../src/bookingRules');
+const { BOOKING_START_MINUTES, BOOKING_END_MINUTES, BOOKING_SLOT_MINUTES } = require('../src/constants');
 
 test('checks room-type permissions independently from system role', () => {
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal'] }, { room_type: 'normal' }), true);
@@ -23,7 +24,7 @@ test('normalizes room type to supported values with legacy VIP fallback', () => 
   assert.equal(normalizeRoomType({ is_vip: true }), 'vip');
 });
 
-test('calculates 24-hour booking minutes and detects overlaps', () => {
+test('calculates booking minutes and detects overlaps', () => {
   assert.equal(minutesBetween('00:00', '01:30'), 90);
   assert.equal(minutesBetween('23:30', '24:00'), 30);
   assert.equal(minutesBetween('23:30:00', '24:00:00'), 30);
@@ -128,4 +129,48 @@ test('limits daily total booking duration across all rooms', () => {
   assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '17:00', 180), true);
   assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '20:00', null), false);
   assert.equal(wouldExceedDailyLimit(existingBookings, '16:00', '20:00', ''), false);
+});
+
+test('limits booking creation to office hours from 08:00 to 20:00', () => {
+  assert.equal(BOOKING_START_MINUTES, 480);
+  assert.equal(BOOKING_END_MINUTES, 1200);
+  assert.equal(BOOKING_SLOT_MINUTES, 30);
+
+  const validFields = {
+    booking_date: '2026-05-10',
+    title: '会议',
+    attendee_count: 10,
+    today: '2026-05-09',
+    roomCapacity: 20
+  };
+
+  assert.equal(validateBookingInput({
+    ...validFields,
+    start_time: '08:00',
+    end_time: '08:30'
+  }).valid, true);
+
+  assert.equal(validateBookingInput({
+    ...validFields,
+    start_time: '19:30',
+    end_time: '20:00'
+  }).valid, true);
+
+  assert.match(validateBookingInput({
+    ...validFields,
+    start_time: '07:30',
+    end_time: '08:00'
+  }).message, /08:00-20:00/);
+
+  assert.match(validateBookingInput({
+    ...validFields,
+    start_time: '20:00',
+    end_time: '20:30'
+  }).message, /08:00-20:00/);
+
+  assert.match(validateBookingInput({
+    ...validFields,
+    start_time: '19:30',
+    end_time: '20:30'
+  }).message, /08:00-20:00/);
 });

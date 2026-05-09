@@ -47,8 +47,8 @@ test('login page uses Utopia V2 branding and no WeChat login button', () => {
 test('pages include PMagic AI powered footer', () => {
     assert.match(html, /Powered by/);
     assert.match(html, /pmagic-powered/);
-    assert.match(html, /pmagic-ai-logo-symbol/);
-    assert.match(html, /class="pmagic-logo"/);
+    assert.match(html, /pmagic-mark/);
+    assert.match(html, /PMagic AI/);
 });
 
 test('page includes white crystal luxury theme anchors', () => {
@@ -65,12 +65,16 @@ test('booking page has V2 purpose and attendee controls', () => {
     assert.match(appJs, /BOOKING_PURPOSES/);
 });
 
-test('booking page exposes room type filters and 24-hour behavior hooks', () => {
+test('booking page exposes room type filters and office-hour behavior hooks', () => {
     assert.match(html, /roomTypeFilter/);
     assert.match(html, /data-room-type="normal"/);
     assert.match(html, /data-room-type="training"/);
     assert.match(html, /data-room-type="vip"/);
     assert.match(appJs, /generateTimeSlots/);
+    assert.match(appJs, /BOOKING_START_MINUTES/);
+    assert.match(appJs, /BOOKING_END_MINUTES/);
+    assert.match(html, /booking-left-column/);
+    assert.match(html, /booking-right-column/);
 });
 
 test('booking calendar follows the one-year booking horizon', () => {
@@ -85,9 +89,21 @@ test('admin page exposes V2 user and room administration anchors', () => {
     assert.match(html, /userImportText/);
     assert.match(html, /userImportFile/);
     assert.match(html, /roomEditType/);
+    assert.match(html, /admin-action-group/);
+    assert.match(html, /admin-action-danger/);
     assert.match(appJs, /importUsersFromText/);
     assert.match(appJs, /toggleUserActive/);
     assert.match(appJs, /resetUserPassword/);
+});
+
+test('admin reports expose responsive dashboard anchors and export controls', () => {
+    assert.match(html, /reportDashboardGrid/);
+    assert.match(html, /reportKpiGrid/);
+    assert.match(html, /reportExportToolbar/);
+    assert.match(html, /reportDailyTrendChart/);
+    assert.match(html, /reportPurposeChart/);
+    assert.match(appJs, /renderReportKpis/);
+    assert.match(appJs, /renderReportTrend/);
 });
 
 test('admin controls normalize database boolean flags from MySQL values', () => {
@@ -124,10 +140,13 @@ test('booking controls normalize API time values and enforce contiguous slots', 
     assert.equal(app.timeToMinutes('24:00'), 1440);
     assert.equal(app.timeToMinutes('24:00:00'), 1440);
     assert.equal(app.timeToMinutes('24:00:01'), null);
-    assert.equal(app.getEndTime('23:30'), '24:00');
+    assert.equal(app.getEndTime('19:30'), '20:00');
+    assert.equal(app.generateTimeSlots().slice(0, 2).join(','), '08:00,08:30');
+    assert.equal(app.generateTimeSlots().at(-1), '19:30');
+    assert.equal(app.generateTimeSlots().includes('20:00'), false);
     assert.equal(app.isSlotOccupied('08:30', { startTime: '08:00:00', endTime: '09:00:00' }), true);
     assert.equal(app.isSlotOccupied('09:00', { startTime: '08:00:00', endTime: '09:00:00' }), false);
-    assert.equal(app.isContiguousSlotSelection(['23:00', '23:30']), true);
+    assert.equal(app.isContiguousSlotSelection(['19:00', '19:30']), true);
 
     app.selectedTimeSlots = ['08:00', '08:30'];
     assert.equal(app.canToggleTimeSlot('09:00').allowed, true);
