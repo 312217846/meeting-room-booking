@@ -39,9 +39,13 @@ function loadFrontendApp() {
 
 test('login page uses Utopia V2 branding and no WeChat login button', () => {
     assert.match(html, /utopia-logo\.png/);
+    assert.match(html, /hong-kong-login-bg\.png/);
+    assert.match(html, /login-page::before/);
+    assert.match(html, /香港维港城市背景/);
     assert.match(html, /会议室、培训室预订系统/);
     assert.match(html, /尖沙咀 港威大廈 5座26樓2601室/);
     assert.doesNotMatch(html, /微信登录/);
+    assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-login-bg.png')), true);
 });
 
 test('pages include PMagic AI powered footer', () => {
