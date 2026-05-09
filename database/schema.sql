@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100) DEFAULT NULL COMMENT '姓氏',
     region VARCHAR(100) DEFAULT NULL COMMENT '区域',
     group_name VARCHAR(100) DEFAULT NULL COMMENT '组别',
-    booking_permissions JSON DEFAULT (JSON_ARRAY('normal')) COMMENT '可预订会议室类型',
+    booking_permissions JSON DEFAULT NULL COMMENT '可预订会议室类型',
     daily_booking_limit_minutes INT DEFAULT 180 COMMENT '每日预订上限（分钟）',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -115,7 +115,10 @@ INSERT INTO system_config (config_key, config_value, description) VALUES
 ('vip_only_rooms', '[]', '仅VIP可预订的会议室ID列表'),
 ('work_start_time', '09:00', '工作开始时间'),
 ('work_end_time', '18:00', '工作结束时间'),
-('time_slot_interval', '30', '时间间隔（分钟）');
+('time_slot_interval', '30', '时间间隔（分钟）')
+ON DUPLICATE KEY UPDATE
+    config_value = VALUES(config_value),
+    description = VALUES(description);
 
 -- 插入示例会议室
 INSERT INTO meeting_rooms (name, capacity, floor, location, equipment, description, is_vip, room_type, sort_order) VALUES

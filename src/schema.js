@@ -5,7 +5,7 @@ function getV2ColumnDefinitions() {
       last_name: 'VARCHAR(100) DEFAULT NULL',
       region: 'VARCHAR(100) DEFAULT NULL',
       group_name: 'VARCHAR(100) DEFAULT NULL',
-      booking_permissions: "JSON DEFAULT (JSON_ARRAY('normal'))",
+      booking_permissions: 'JSON DEFAULT NULL',
       daily_booking_limit_minutes: 'INT DEFAULT 180',
       is_active: 'BOOLEAN DEFAULT TRUE'
     },
@@ -29,8 +29,9 @@ async function ensureV2Schema(pool) {
       }
     }
   }
+  await pool.execute("UPDATE users SET booking_permissions = JSON_ARRAY('normal') WHERE booking_permissions IS NULL");
   await pool.execute("UPDATE meeting_rooms SET room_type = 'vip' WHERE is_vip = TRUE AND room_type = 'normal'");
-  await pool.execute("INSERT IGNORE INTO system_config (config_key, config_value, description) VALUES ('default_daily_booking_limit_minutes', '180', '默认每日预订上限（分钟）'), ('booking_max_days', '365', '最大可提前预订天数'), ('booking_purposes', '[\"见客\",\"招募\",\"培训\",\"讲座\",\"会议\",\"其他\"]', '预订用途选项')");
+  await pool.execute("INSERT INTO system_config (config_key, config_value, description) VALUES ('default_daily_booking_limit_minutes', '180', '默认每日预订上限（分钟）'), ('booking_max_days', '365', '最大可提前预订天数'), ('booking_purposes', '[\"见客\",\"招募\",\"培训\",\"讲座\",\"会议\",\"其他\"]', '预订用途选项') ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), description = VALUES(description)");
 }
 
 module.exports = { getV2ColumnDefinitions, ensureV2Schema };
