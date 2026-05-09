@@ -18,6 +18,11 @@ test('room admin update preserves sort_order when omitted from the UI payload', 
   assert.match(serverJs, /roomType, isVip, is_active, sortOrder, roomId/);
 });
 
+test('admin user delete deactivates and releases future bookings instead of hard deleting', () => {
+  assert.doesNotMatch(serverJs, /DELETE FROM users WHERE id = \?/);
+  assert.match(serverJs, /disableUserAndCancelFutureBookings\(\s*pool,\s*userId,/);
+});
+
 test('admin reports response includes booking usage ranking data', () => {
   assert.match(serverJs, /const \[bookingUsage\] = await pool\.execute/);
   assert.match(serverJs, /bookingUsage/);

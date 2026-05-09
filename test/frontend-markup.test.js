@@ -59,6 +59,13 @@ test('booking page exposes room type filters and 24-hour behavior hooks', () => 
     assert.match(appJs, /generateTimeSlots/);
 });
 
+test('booking calendar follows the one-year booking horizon', () => {
+    const app = loadFrontendApp();
+    assert.equal(app.isDateWithinBookingHorizon(new Date('2026-06-15T00:00:00'), new Date('2026-05-09T00:00:00')), true);
+    assert.equal(app.isDateWithinBookingHorizon(new Date('2027-05-09T00:00:00'), new Date('2026-05-09T00:00:00')), true);
+    assert.equal(app.isDateWithinBookingHorizon(new Date('2027-05-10T00:00:00'), new Date('2026-05-09T00:00:00')), false);
+});
+
 test('admin page exposes V2 user and room administration anchors', () => {
     assert.match(html, /adminUserSearch/);
     assert.match(html, /userImportText/);

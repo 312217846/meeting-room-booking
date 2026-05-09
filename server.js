@@ -1296,8 +1296,21 @@ app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
             return res.status(400).json({ code: 400, message: '不能删除当前登录用户' });
         }
         
-        await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
-        res.json({ code: 0, message: '删除成功' });
+        const result = await disableUserAndCancelFutureBookings(
+            pool,
+            userId,
+            req.session.user.userid,
+            getTodayDateString()
+        );
+        if (result.message === '用户不存在') {
+            return res.status(404).json({ code: 404, message: '用户不存在' });
+        }
+
+        await pool.execute(
+            `INSERT INTO operation_logs (user_id, action, target_type, target_id, new_value) VALUES (?, 'delete', 'user', ?, ?)`,
+            [req.session.user.userid, userId, JSON.stringify({ soft_delete: true, message: result.message })]
+        );
+        res.json({ code: 0, message: result.message || '已停用用户' });
     } catch (error) {
         console.error('删除用户失败:', error);
         res.status(500).json({ code: 500, message: '删除用户失败' });

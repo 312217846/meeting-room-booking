@@ -13,6 +13,7 @@ test('checks room-type permissions independently from system role', () => {
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal'] }, { room_type: 'normal' }), true);
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal'] }, { room_type: 'vip' }), false);
   assert.equal(hasRoomTypePermission({ booking_permissions: ['normal', 'training'] }, { room_type: 'training' }), true);
+  assert.equal(hasRoomTypePermission({ role: 'admin', booking_permissions: ['normal'] }, { room_type: 'vip' }), true);
 });
 
 test('normalizes room type to supported values with legacy VIP fallback', () => {

@@ -18,6 +18,7 @@ function normalizeRoomType(room) {
 }
 
 function hasRoomTypePermission(user, room) {
+  if (user && user.role === 'admin') return true;
   const permissions = parsePermissions(user && user.booking_permissions);
   return permissions.includes(normalizeRoomType(room));
 }

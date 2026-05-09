@@ -55,6 +55,7 @@ const ROOM_TYPE_LABELS = {
 };
 
 const BOOKING_PURPOSES = ['见客', '招募', '培训', '讲座', '会议', '其他'];
+const MAX_BOOKING_DAYS = 365;
 
 // ---- 应用主对象（唯一入口） ----
 const app = {
@@ -206,6 +207,16 @@ const app = {
         if (value === null || value === undefined || value === '') return '不限';
         const minutes = Number(value);
         return Number.isFinite(minutes) ? `${minutes}分钟` : '-';
+    },
+
+    isDateWithinBookingHorizon(date, today = new Date()) {
+        const target = new Date(date);
+        const start = new Date(today);
+        target.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
+        const maxDate = new Date(start);
+        maxDate.setDate(start.getDate() + MAX_BOOKING_DAYS);
+        return target >= start && target <= maxDate;
     },
 
     updateRoomTypeFilterButtons() {
@@ -597,8 +608,6 @@ const app = {
         const today = new Date();
         today.setHours(0,0,0,0);
         const todayStr = this.formatDate(today);
-        const maxDate = new Date(today);
-        maxDate.setDate(today.getDate() + 30);
         const days = ['日', '一', '二', '三', '四', '五', '六'];
 
         if (!this.selectedDate) this.selectedDate = todayStr;
@@ -628,9 +637,7 @@ const app = {
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = new Date(viewYear, viewMonth, d);
                 const dateStr = this.formatDate(date);
-                const isPast = date < today;
-                const isOverMax = date > maxDate;
-                const isDisabled = isPast || isOverMax;
+                const isDisabled = !this.isDateWithinBookingHorizon(date, today);
                 const isSelected = dateStr === this.selectedDate;
                 const isToday = dateStr === todayStr;
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
