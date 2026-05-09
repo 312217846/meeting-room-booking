@@ -8,14 +8,14 @@ const repoRoot = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(repoRoot, 'public', 'index.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(repoRoot, 'public', 'app.js'), 'utf8');
 
-function loadFrontendApp() {
+function loadFrontendApp(windowOverrides = {}) {
     const sandbox = {
         console,
         fetch: async () => ({ json: async () => ({}) }),
         localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
         setTimeout: () => {},
         URLSearchParams,
-        window: { open: () => {} },
+        window: { open: () => {}, location: { protocol: 'https:', search: '' }, ...windowOverrides },
         document: {
             body: { appendChild: () => {} },
             head: { appendChild: () => {} },
@@ -39,13 +39,24 @@ function loadFrontendApp() {
 
 test('login page uses Utopia V2 branding and no WeChat login button', () => {
     assert.match(html, /utopia-logo\.png/);
-    assert.match(html, /hong-kong-login-bg\.png/);
+    assert.match(html, /hong-kong-login-bg-gpt\.png/);
     assert.match(html, /login-page::before/);
     assert.match(html, /香港维港城市背景/);
     assert.match(html, /会议室、培训室预订系统/);
     assert.match(html, /尖沙咀 港威大廈 5座26樓2601室/);
     assert.doesNotMatch(html, /微信登录/);
-    assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-login-bg.png')), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-login-bg-gpt.png')), true);
+});
+
+test('file preview login enters the app without credentials', async () => {
+    const app = loadFrontendApp({ location: { protocol: 'file:', search: '' } });
+    let previewUser = null;
+    app.handleLoginSuccess = async user => { previewUser = user; };
+
+    await app.handleLogin();
+
+    assert.equal(previewUser.role, 'admin');
+    assert.equal(previewUser.phone, '+852 0000 0000');
 });
 
 test('pages include PMagic AI powered footer', () => {

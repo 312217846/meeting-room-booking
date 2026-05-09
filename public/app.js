@@ -63,6 +63,7 @@ const BOOKING_SLOT_MINUTES = 30;
 // ---- 应用主对象（唯一入口） ----
 const app = {
     currentUser: null,
+    previewMode: false,
     currentTab: 'rooms',
     roomFilter: 'all',
     roomTypeFilter: 'normal',
@@ -313,11 +314,87 @@ const app = {
         document.getElementById('loginForm').style.display = 'block';
     },
 
+    isLocalPreviewHost() {
+        const location = window.location || {};
+        const host = location.hostname || '';
+        return !host || ['localhost', '127.0.0.1', '::1'].includes(host);
+    },
+
+    shouldUseInstantPreviewLogin() {
+        const location = window.location || {};
+        if (location.protocol === 'file:') return true;
+        try {
+            const params = new URLSearchParams(location.search || '');
+            return params.get('preview') === '1' && this.isLocalPreviewHost();
+        } catch (error) {
+            return false;
+        }
+    },
+
+    getPreviewUser() {
+        return {
+            id: 1,
+            name: '预览管理员',
+            phone: '+852 0000 0000',
+            avatar: 'P',
+            role: 'admin',
+            booking_permissions: ['normal', 'training', 'vip'],
+            daily_booking_limit_minutes: null,
+            is_active: true,
+            preview_mode: true
+        };
+    },
+
+    getPreviewRooms() {
+        return [
+            { id: 1, name: 'Harbour Crystal Room', room_type: 'normal', type: 'normal', capacity: 8, floor: '26F', location: '维港景观区', equipment: ['电视屏', '白板', '视频会议'], is_active: true },
+            { id: 2, name: 'Golden Training Suite', room_type: 'training', type: 'training', capacity: 28, floor: '26F', location: '培训中心', equipment: ['投影', '音响', '移动桌椅'], is_active: true },
+            { id: 3, name: 'Executive VIP Lounge', room_type: 'vip', type: 'vip', capacity: 12, floor: '26F', location: '贵宾洽谈区', equipment: ['双屏', '茶水吧', '视频会议'], is_active: true }
+        ];
+    },
+
+    getPreviewUsers() {
+        return [
+            this.getPreviewUser(),
+            { id: 2, name: '陈小曼', phone: '+852 6123 4567', avatar: '陈', role: 'premium', region: '香港', group_name: 'Agency A', booking_permissions: ['normal', 'training'], daily_booking_limit_minutes: 240, is_active: true },
+            { id: 3, name: '林志豪', phone: '+852 6234 5678', avatar: '林', role: 'normal', region: '九龙', group_name: 'Agency B', booking_permissions: ['normal'], daily_booking_limit_minutes: 120, is_active: true }
+        ];
+    },
+
+    getPreviewBookings(date = this.formatDate(new Date())) {
+        return [
+            { id: 101, room_id: 1, roomId: 1, room_name: 'Harbour Crystal Room', booking_date: date, date, start_time: '09:00', startTime: '09:00', end_time: '10:30', endTime: '10:30', user_name: '陈小曼', title: '见客', status: 'confirmed', attendee_count: 4, created_at: `${date}T08:30:00` },
+            { id: 102, room_id: 2, roomId: 2, room_name: 'Golden Training Suite', booking_date: date, date, start_time: '14:00', startTime: '14:00', end_time: '16:00', endTime: '16:00', user_name: '林志豪', title: '培训', status: 'confirmed', attendee_count: 22, created_at: `${date}T09:10:00` }
+        ];
+    },
+
+    primePreviewData() {
+        this.previewMode = true;
+        ROOMS_DATA = this.getPreviewRooms();
+        this.adminUsers = this.getPreviewUsers();
+        this.bookings = this.getPreviewBookings();
+    },
+
+    async handlePreviewLogin() {
+        this.primePreviewData();
+        const user = this.getPreviewUser();
+        this.currentUser = user;
+        try { localStorage.setItem('currentUser', JSON.stringify(user)); } catch (error) {}
+        await this.handleLoginSuccess(user);
+        this.showToast('已进入预览模式', 'success');
+    },
+
     async handleLogin() {
-        const phone = document.getElementById('loginPhone').value.trim();
-        const password = document.getElementById('loginPassword').value;
+        if (this.shouldUseInstantPreviewLogin()) {
+            await this.handlePreviewLogin();
+            return;
+        }
+
+        const phone = document.getElementById('loginPhone')?.value.trim() || '';
+        const password = document.getElementById('loginPassword')?.value || '';
         if (!phone || !password) { this.showToast('请输入手机号和密码', 'error'); return; }
-        const btn = event?.target?.closest('button');
+        const triggerEvent = typeof event !== 'undefined' ? event : null;
+        const btn = triggerEvent?.target?.closest('button');
         if (btn) { btn.classList.add('btn-loading'); btn.textContent = '登录中...'; }
         try {
             const res = await API.login(phone, password);
@@ -363,6 +440,7 @@ const app = {
     async handleLogout() {
         try { await API.logout(); } catch (e) {}
         this.currentUser = null;
+        this.previewMode = false;
         localStorage.removeItem('currentUser');
         ROOMS_DATA = [];
         document.getElementById('loginPage').style.display = '';
@@ -397,6 +475,10 @@ const app = {
 
     // ==================== 数据加载 ====================
     async loadRoomsData() {
+        if (this.previewMode) {
+            ROOMS_DATA = this.getPreviewRooms();
+            return;
+        }
         try {
             const res = await API.getRooms();
             if (res.code === 0) {
@@ -416,7 +498,10 @@ const app = {
             if (res.code === 0) this.currentUser = res.data;
         } catch (e) {
             const saved = localStorage.getItem('currentUser');
-            if (saved) this.currentUser = JSON.parse(saved);
+            if (saved) {
+                this.currentUser = JSON.parse(saved);
+                if (this.currentUser?.preview_mode) this.primePreviewData();
+            }
         }
         await this.loadRoomsData();
     },
@@ -511,10 +596,14 @@ const app = {
         const nowMinutes = nowHour * 60 + nowMin;
 
         let todayBookings = [];
-        try {
-            const res = await API.getTodayBookings(todayStr);
-            if (res.code === 0) todayBookings = res.data;
-        } catch (e) {}
+        if (this.previewMode) {
+            todayBookings = this.getPreviewBookings(todayStr);
+        } else {
+            try {
+                const res = await API.getTodayBookings(todayStr);
+                if (res.code === 0) todayBookings = res.data;
+            } catch (e) {}
+        }
 
         ROOMS_DATA.forEach(room => {
             const roomType = this.normalizeRoomType(room);
@@ -742,21 +831,34 @@ const app = {
         container.innerHTML = '';
         if (!this.selectedRoom) { container.innerHTML = '<div class="time-slot-placeholder">请先选择会议室</div>'; return; }
         let existingBookings = [];
-        try {
-            const res = await API.getBookings({ room_id: this.selectedRoom.id, date: this.selectedDate });
-            if (res.code === 0) existingBookings = res.data.map(b => ({
-                roomId: b.room_id,
-                date: b.booking_date,
-                startTime: b.start_time,
-                endTime: b.end_time,
-                userName: b.user_name,
-                englishName: b.english_name,
-                lastName: b.last_name,
-                region: b.region,
-                groupName: b.group_name,
-                status: b.status
-            }));
-        } catch (e) { console.error('获取预订数据失败:', e); }
+        if (this.previewMode) {
+            existingBookings = this.getPreviewBookings(this.selectedDate)
+                .filter(b => (b.room_id || b.roomId) === this.selectedRoom.id)
+                .map(b => ({
+                    roomId: b.room_id,
+                    date: b.booking_date,
+                    startTime: b.start_time,
+                    endTime: b.end_time,
+                    userName: b.user_name,
+                    status: b.status
+                }));
+        } else {
+            try {
+                const res = await API.getBookings({ room_id: this.selectedRoom.id, date: this.selectedDate });
+                if (res.code === 0) existingBookings = res.data.map(b => ({
+                    roomId: b.room_id,
+                    date: b.booking_date,
+                    startTime: b.start_time,
+                    endTime: b.end_time,
+                    userName: b.user_name,
+                    englishName: b.english_name,
+                    lastName: b.last_name,
+                    region: b.region,
+                    groupName: b.group_name,
+                    status: b.status
+                }));
+            } catch (e) { console.error('获取预订数据失败:', e); }
+        }
 
         const now = new Date();
         const todayStr = this.formatDate(now);
@@ -890,19 +992,33 @@ const app = {
         if (!container) return;
         container.innerHTML = '';
         let myBookings = [];
-        try {
-            const res = await API.getBookings({});
-            if (res.code === 0) {
-                myBookings = res.data.map(b => ({
-                    id: b.id, roomName: b.room_name,
-                    roomType: b.room_name && b.room_name.includes('VIP') ? 'vip' : 'normal',
-                    date: b.booking_date, startTime: b.start_time, endTime: b.end_time,
-                    title: b.title, status: b.status === 'confirmed' ? 'upcoming' : b.status, createdAt: b.created_at
-                }));
+        if (this.previewMode) {
+            myBookings = this.getPreviewBookings().map(b => ({
+                id: b.id,
+                roomName: b.room_name,
+                roomType: this.normalizeRoomType(ROOMS_DATA.find(room => room.id === b.room_id) || 'normal'),
+                date: b.booking_date,
+                startTime: b.start_time,
+                endTime: b.end_time,
+                title: b.title,
+                status: 'upcoming',
+                createdAt: b.created_at
+            }));
+        } else {
+            try {
+                const res = await API.getBookings({});
+                if (res.code === 0) {
+                    myBookings = res.data.map(b => ({
+                        id: b.id, roomName: b.room_name,
+                        roomType: b.room_name && b.room_name.includes('VIP') ? 'vip' : 'normal',
+                        date: b.booking_date, startTime: b.start_time, endTime: b.end_time,
+                        title: b.title, status: b.status === 'confirmed' ? 'upcoming' : b.status, createdAt: b.created_at
+                    }));
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">加载失败，请稍后重试</div></div>';
+                return;
             }
-        } catch (error) {
-            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">加载失败，请稍后重试</div></div>';
-            return;
         }
         if (myBookings.length === 0) {
             container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">暂无预订记录</div></div>';
@@ -944,6 +1060,19 @@ const app = {
     // ==================== 统计 ====================
     async updateStats() {
         if (!this.currentUser || this.currentUser.role !== 'admin') return;
+        if (this.previewMode) {
+            const map = {
+                statTotalRooms: this.getPreviewRooms().length,
+                statTotalBookings: this.getPreviewBookings().length,
+                statTotalUsers: this.getPreviewUsers().length,
+                statVipUsers: this.getPreviewUsers().filter(user => user.role === 'premium' || user.role === 'admin').length
+            };
+            Object.entries(map).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            });
+            return;
+        }
         try {
             const res = await API.getStats();
             if (res.code === 0) {
@@ -969,10 +1098,14 @@ const app = {
         const tbody = document.getElementById('adminRoomTableBody');
         if (!tbody) return;
         let rooms = [];
-        try { const res = await API.getAllRooms(); if (res.code === 0) rooms = res.data; } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px">加载失败</td></tr>';
-            this.renderAdminRoomCards([]);
-            return;
+        if (this.previewMode) {
+            rooms = this.getPreviewRooms();
+        } else {
+            try { const res = await API.getAllRooms(); if (res.code === 0) rooms = res.data; } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px">加载失败</td></tr>';
+                this.renderAdminRoomCards([]);
+                return;
+            }
         }
         this.renderAdminRoomCards(rooms);
         tbody.innerHTML = rooms.map(room => {
@@ -1034,14 +1167,22 @@ const app = {
         if (!tbody) return;
         const search = document.getElementById('adminUserSearch')?.value.trim() || '';
         let users = [];
-        try {
-            const res = await API.getUsers(search);
-            if (res.code === 0) users = Array.isArray(res.data) ? res.data : (res.data?.users || []);
+        if (this.previewMode) {
+            users = this.getPreviewUsers().filter(user => {
+                const text = `${user.name || ''} ${user.phone || ''} ${user.region || ''} ${user.group_name || ''}`.toLowerCase();
+                return text.includes(search.toLowerCase());
+            });
             this.adminUsers = users;
-        } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px">加载失败</td></tr>';
-            this.renderAdminUserCards([]);
-            return;
+        } else {
+            try {
+                const res = await API.getUsers(search);
+                if (res.code === 0) users = Array.isArray(res.data) ? res.data : (res.data?.users || []);
+                this.adminUsers = users;
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px">加载失败</td></tr>';
+                this.renderAdminUserCards([]);
+                return;
+            }
         }
         this.renderAdminUserCards(users);
         if (users.length === 0) {
