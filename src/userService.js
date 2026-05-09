@@ -1,4 +1,5 @@
 const { DEFAULT_DAILY_BOOKING_LIMIT_MINUTES } = require('./constants');
+const { normalizeHongKongPhone } = require('./phone');
 
 function buildUserSearchQuery(search) {
   const base = `SELECT id, userid, name, avatar, english_name, last_name, region, group_name, department, role, phone, email, gender, booking_permissions, daily_booking_limit_minutes, is_active, created_at, last_login_at FROM users`;
@@ -12,18 +13,20 @@ function buildUserSearchQuery(search) {
 function buildImportedUserRecord(row) {
   const english = String(row.english_name || '').trim();
   const last = String(row.last_name || '').trim();
+  const phone = normalizeHongKongPhone(row.phone);
   return {
-    userid: row.phone,
-    name: `${english} ${last}`.trim() || row.phone,
-    avatar: (english || last || row.phone || '?').charAt(0).toUpperCase(),
+    userid: phone,
+    name: `${english} ${last}`.trim() || phone,
+    avatar: (english || last || phone || '?').charAt(0).toUpperCase(),
     english_name: english,
     last_name: last,
     region: row.region || null,
     group_name: row.group_name || null,
-    phone: row.phone,
+    phone,
     role: 'normal',
-    booking_permissions: row.booking_permissions || ['normal'],
-    daily_booking_limit_minutes: DEFAULT_DAILY_BOOKING_LIMIT_MINUTES
+    booking_permissions: JSON.stringify(row.booking_permissions || ['normal']),
+    daily_booking_limit_minutes: DEFAULT_DAILY_BOOKING_LIMIT_MINUTES,
+    is_active: true
   };
 }
 

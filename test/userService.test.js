@@ -34,15 +34,16 @@ test('maps imported user to database record with phone as initial password sourc
     last_name: 'Lovelace',
     region: 'HK',
     group_name: 'Alpha',
-    phone: '+85261234567',
+    phone: '6123 4567',
     booking_permissions: ['normal', 'training']
   });
 
   assert.equal(record.name, 'Ada Lovelace');
   assert.equal(record.userid, '+85261234567');
   assert.equal(record.phone, '+85261234567');
-  assert.deepEqual(record.booking_permissions, ['normal', 'training']);
+  assert.equal(record.booking_permissions, '["normal","training"]');
   assert.equal(record.daily_booking_limit_minutes, 180);
+  assert.equal(record.is_active, true);
 });
 
 test('disables user and cancels future confirmed bookings', async () => {
