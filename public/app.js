@@ -96,12 +96,28 @@ const app = {
         return `${y}-${m}-${d}`;
     },
 
+    timeToMinutes(time) {
+        const match = String(time || '').trim().match(/^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$/);
+        if (!match) return null;
+        const hour = Number(match[1]);
+        const minute = Number(match[2]);
+        const second = Number(match[3] || 0);
+        if (hour === 24 && minute === 0 && second === 0) return 24 * 60;
+        if (hour < 0 || hour > 23) return null;
+        return hour * 60 + minute + second / 60;
+    },
+
+    minutesToTime(minutes) {
+        if (!Number.isInteger(minutes) || minutes < 0 || minutes > 24 * 60) return null;
+        const hour = Math.floor(minutes / 60);
+        const min = minutes % 60;
+        return `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+    },
+
     getEndTime(startTime) {
-        const [hour, min] = startTime.split(':').map(Number);
-        let endHour = hour, endMin = min + 30;
-        if (endMin >= 60) { endHour++; endMin = 0; }
-        if (endHour === 24 && endMin === 0) return '24:00';
-        return `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+        const startMinutes = this.timeToMinutes(startTime);
+        if (startMinutes === null) return '';
+        return this.minutesToTime(startMinutes + 30);
     },
 
     generateTimeSlots() {
@@ -178,6 +194,50 @@ const app = {
             .map(part => String(part || '').trim())
             .filter(Boolean);
         return profileParts.length > 0 ? profileParts.join(' ') : (booking.userName || booking.user_name || '');
+    },
+
+    isSlotOccupied(slotTime, booking) {
+        const slotStartMinutes = this.timeToMinutes(slotTime);
+        const bookingStartMinutes = this.timeToMinutes(booking.startTime || booking.start_time);
+        const bookingEndMinutes = this.timeToMinutes(booking.endTime || booking.end_time);
+        return slotStartMinutes !== null && bookingStartMinutes !== null && bookingEndMinutes !== null &&
+            slotStartMinutes >= bookingStartMinutes && slotStartMinutes < bookingEndMinutes;
+    },
+
+    getSortedTimeSlots(slots) {
+        return [...slots].sort((a, b) => this.timeToMinutes(a) - this.timeToMinutes(b));
+    },
+
+    isContiguousSlotSelection(slots) {
+        const sortedSlots = this.getSortedTimeSlots(slots);
+        return sortedSlots.every((slot, index) => {
+            if (this.timeToMinutes(slot) === null) return false;
+            if (index === 0) return true;
+            return this.timeToMinutes(slot) - this.timeToMinutes(sortedSlots[index - 1]) === 30;
+        });
+    },
+
+    canToggleTimeSlot(time) {
+        const targetMinutes = this.timeToMinutes(time);
+        const sortedSlots = this.getSortedTimeSlots(this.selectedTimeSlots);
+        if (targetMinutes === null) return { allowed: false, message: '时间段格式无效，请重新选择' };
+
+        const selectedIndex = sortedSlots.indexOf(time);
+        if (selectedIndex > -1) {
+            if (sortedSlots.length <= 1) return { allowed: true };
+            const firstMinutes = this.timeToMinutes(sortedSlots[0]);
+            const lastMinutes = this.timeToMinutes(sortedSlots[sortedSlots.length - 1]);
+            if (targetMinutes === firstMinutes || targetMinutes === lastMinutes) return { allowed: true };
+            return { allowed: false, message: '只能从已选时间段的两端取消，请保持连续选择' };
+        }
+
+        if (sortedSlots.length === 0) return { allowed: true };
+        if (!this.isContiguousSlotSelection(sortedSlots)) return { allowed: false, message: '已选时间段不连续，请重新选择' };
+
+        const firstMinutes = this.timeToMinutes(sortedSlots[0]);
+        const lastMinutes = this.timeToMinutes(sortedSlots[sortedSlots.length - 1]);
+        if (targetMinutes === firstMinutes - 30 || targetMinutes === lastMinutes + 30) return { allowed: true };
+        return { allowed: false, message: '请选择相邻的时间段，预订时间必须连续' };
     },
 
     showToast(message, type = 'info') {
@@ -425,10 +485,11 @@ const app = {
             const dayStart = 480, dayEnd = 1080, dayTotal = 600;
 
             roomBookings.forEach(b => {
-                const [sh, sm] = (b.start_time || b.startTime || '08:00').split(':').map(Number);
-                const [eh, em] = (b.end_time || b.endTime || '09:00').split(':').map(Number);
-                const sMin = Math.max(sh * 60 + sm, dayStart);
-                const eMin = Math.min(eh * 60 + em, dayEnd);
+                const bookingStart = this.timeToMinutes(b.start_time || b.startTime || '08:00');
+                const bookingEnd = this.timeToMinutes(b.end_time || b.endTime || '09:00');
+                if (bookingStart === null || bookingEnd === null) return;
+                const sMin = Math.max(bookingStart, dayStart);
+                const eMin = Math.min(bookingEnd, dayEnd);
                 if (eMin > sMin) {
                     occupiedMinutes += (eMin - sMin);
                     const leftPct = ((sMin - dayStart) / dayTotal * 100).toFixed(2);
@@ -440,9 +501,9 @@ const app = {
 
             const occupiedRatio = occupiedMinutes / dayTotal;
             const isBusy = roomBookings.some(b => {
-                const [sh, sm] = (b.start_time || b.startTime || '08:00').split(':').map(Number);
-                const [eh, em] = (b.end_time || b.endTime || '09:00').split(':').map(Number);
-                return nowMinutes >= sh * 60 + sm && nowMinutes < eh * 60 + em;
+                const bookingStart = this.timeToMinutes(b.start_time || b.startTime || '08:00');
+                const bookingEnd = this.timeToMinutes(b.end_time || b.endTime || '09:00');
+                return bookingStart !== null && bookingEnd !== null && nowMinutes >= bookingStart && nowMinutes < bookingEnd;
             });
             statusTag = occupiedRatio >= 0.7 ? '<span class="room-status-tag full">已满</span>' :
                          isBusy ? '<span class="room-status-tag busy">使用中</span>' :
@@ -655,13 +716,13 @@ const app = {
         const isToday = this.selectedDate === todayStr;
 
         this.generateTimeSlots().forEach(time => {
-            const [hour, min] = time.split(':').map(Number);
+            const slotStartMinutes = this.timeToMinutes(time);
             const endTime = this.getEndTime(time);
             const slot = document.createElement('div');
             slot.dataset.time = time;
 
-            const isPast = isToday && (hour < now.getHours() || (hour === now.getHours() && min <= now.getMinutes()));
-            const booking = existingBookings.find(b => time >= b.startTime && time < b.endTime);
+            const isPast = isToday && slotStartMinutes !== null && slotStartMinutes <= now.getHours() * 60 + now.getMinutes();
+            const booking = existingBookings.find(b => this.isSlotOccupied(time, b));
             const slotLabel = `<span>${time}</span><span class="booker-name">${time} - ${endTime}</span>`;
 
             if (isPast) {
@@ -685,13 +746,19 @@ const app = {
 
     toggleTimeSlot(time, element) {
         if (element.classList.contains('occupied')) return;
+        const toggleResult = this.canToggleTimeSlot(time);
+        if (!toggleResult.allowed) {
+            this.showToast(toggleResult.message, 'error');
+            return;
+        }
+
         const idx = this.selectedTimeSlots.indexOf(time);
         if (idx > -1) {
             this.selectedTimeSlots.splice(idx, 1);
             element.className = 'time-slot available';
         } else {
             this.selectedTimeSlots.push(time);
-            this.selectedTimeSlots.sort();
+            this.selectedTimeSlots = this.getSortedTimeSlots(this.selectedTimeSlots);
             element.className = 'time-slot selected';
         }
         this.updateSubmitButtonState();
@@ -734,7 +801,9 @@ const app = {
         if (!title || !BOOKING_PURPOSES.includes(title)) { this.showError('请选择用途', '请选择本次预订用途'); return; }
         if (!Number.isInteger(attendeeCount) || attendeeCount < 1 || attendeeCount > 200) { this.showError('人数无效', '预计人数需在1到200之间'); return; }
         if (!this.userCanBookRoom(this.selectedRoom)) { this.showError('权限不足', `您没有预订${this.getRoomTypeLabel(this.selectedRoom)}的权限`); return; }
+        if (!this.isContiguousSlotSelection(this.selectedTimeSlots)) { this.showError('时间段不连续', '请选择连续的时间段后再提交'); return; }
 
+        this.selectedTimeSlots = this.getSortedTimeSlots(this.selectedTimeSlots);
         const startTime = this.selectedTimeSlots[0];
         const endTime = this.getEndTime(this.selectedTimeSlots[this.selectedTimeSlots.length - 1]);
 

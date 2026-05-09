@@ -2,10 +2,40 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const repoRoot = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(repoRoot, 'public', 'index.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(repoRoot, 'public', 'app.js'), 'utf8');
+
+function loadFrontendApp() {
+    const sandbox = {
+        console,
+        fetch: async () => ({ json: async () => ({}) }),
+        localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+        setTimeout: () => {},
+        URLSearchParams,
+        window: { open: () => {} },
+        document: {
+            body: { appendChild: () => {} },
+            head: { appendChild: () => {} },
+            addEventListener: () => {},
+            createElement: () => ({
+                style: {},
+                dataset: {},
+                classList: { add: () => {}, remove: () => {}, toggle: () => {} },
+                appendChild: () => {},
+                remove: () => {},
+                setAttribute: () => {}
+            }),
+            getElementById: () => null,
+            querySelector: () => null,
+            querySelectorAll: () => []
+        }
+    };
+    vm.runInNewContext(appJs, sandbox);
+    return sandbox.window.app;
+}
 
 test('login page uses Utopia V2 branding and no WeChat login button', () => {
     assert.match(html, /utopia-logo\.png/);
@@ -27,5 +57,30 @@ test('booking page exposes room type filters and 24-hour behavior hooks', () => 
     assert.match(html, /data-room-type="training"/);
     assert.match(html, /data-room-type="vip"/);
     assert.match(appJs, /generateTimeSlots/);
-    assert.match(appJs, /24:00/);
+});
+
+test('booking controls normalize API time values and enforce contiguous slots', () => {
+    assert.match(appJs, /timeToMinutes/);
+    assert.match(appJs, /isSlotOccupied/);
+    assert.match(appJs, /isContiguousSlotSelection/);
+    assert.match(appJs, /canToggleTimeSlot/);
+
+    const app = loadFrontendApp();
+    assert.equal(app.timeToMinutes('08:30'), 510);
+    assert.equal(app.timeToMinutes('08:30:00'), 510);
+    assert.equal(app.timeToMinutes('08:30:30'), 510.5);
+    assert.equal(app.timeToMinutes('24:00'), 1440);
+    assert.equal(app.timeToMinutes('24:00:00'), 1440);
+    assert.equal(app.getEndTime('23:30'), '24:00');
+    assert.equal(app.isSlotOccupied('08:30', { startTime: '08:00:00', endTime: '09:00:00' }), true);
+    assert.equal(app.isSlotOccupied('09:00', { startTime: '08:00:00', endTime: '09:00:00' }), false);
+    assert.equal(app.isContiguousSlotSelection(['23:00', '23:30']), true);
+
+    app.selectedTimeSlots = ['08:00', '08:30'];
+    assert.equal(app.canToggleTimeSlot('09:00').allowed, true);
+    assert.equal(app.canToggleTimeSlot('09:30').allowed, false);
+
+    app.selectedTimeSlots = ['08:00', '08:30', '09:00'];
+    assert.equal(app.canToggleTimeSlot('08:30').allowed, false);
+    assert.equal(app.canToggleTimeSlot('09:00').allowed, true);
 });
