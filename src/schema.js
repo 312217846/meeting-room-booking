@@ -5,6 +5,7 @@ function getV2ColumnDefinitions() {
       gender: "ENUM('unknown', 'male', 'female') DEFAULT 'unknown'",
       english_name: 'VARCHAR(100) DEFAULT NULL',
       last_name: 'VARCHAR(100) DEFAULT NULL',
+      email: 'VARCHAR(100) DEFAULT NULL',
       region: 'VARCHAR(100) DEFAULT NULL',
       group_name: 'VARCHAR(100) DEFAULT NULL',
       booking_permissions: 'JSON DEFAULT NULL',

@@ -7,6 +7,7 @@ test('declares required V2 columns for users and meeting rooms', () => {
   assert.ok(definitions.users.password_hash.includes('VARCHAR(255)'));
   assert.ok(definitions.users.gender.includes('ENUM'));
   assert.ok(definitions.users.english_name.includes('VARCHAR(100)'));
+  assert.equal(definitions.users.email, 'VARCHAR(100) DEFAULT NULL');
   assert.ok(definitions.users.booking_permissions.includes('JSON'));
   assert.equal(definitions.users.booking_permissions.includes('DEFAULT (JSON_ARRAY'), false);
   assert.ok(definitions.users.daily_booking_limit_minutes.includes('INT'));
@@ -29,6 +30,7 @@ test('adds only missing columns with a fake pool', async () => {
   await ensureV2Schema(fakePool);
 
   assert.equal(executed.some(call => call.sql.includes('ADD COLUMN english_name')), false);
+  assert.equal(executed.some(call => call.sql.includes('ADD COLUMN email VARCHAR(100) DEFAULT NULL')), true);
   assert.equal(executed.some(call => call.sql.includes('ADD COLUMN booking_permissions')), true);
   assert.equal(executed.some(call => call.sql.includes('ADD COLUMN room_type')), true);
 });
