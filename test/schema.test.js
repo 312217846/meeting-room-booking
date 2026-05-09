@@ -55,6 +55,28 @@ test('backfills default booking permissions for existing users', async () => {
   );
 });
 
+test('backfills legacy VIP rooms to vip room type', async () => {
+  const executed = [];
+  const fakePool = {
+    async execute(sql, params) {
+      executed.push({ sql, params });
+      if (sql.includes('SHOW COLUMNS')) {
+        return [[{ Field: params[0] }]];
+      }
+      return [[]];
+    }
+  };
+
+  await ensureV2Schema(fakePool);
+
+  assert.equal(
+    executed.some(call =>
+      call.sql.includes("UPDATE meeting_rooms SET room_type = 'vip' WHERE is_vip = TRUE AND room_type = 'normal'")
+    ),
+    true
+  );
+});
+
 test('upserts V2 config defaults instead of insert ignore', async () => {
   const executed = [];
   const fakePool = {
