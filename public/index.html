@@ -1700,6 +1700,42 @@
             transition: transform 0.1s;
         }
 
+        .pmagic-powered {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px auto 0;
+            padding: 8px 14px;
+            width: fit-content;
+            border: 1px solid rgba(255, 255, 255, 0.68);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.54);
+            box-shadow: 0 10px 30px rgba(120, 92, 24, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+            color: rgba(44, 36, 23, 0.68);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+        .pmagic-powered img {
+            width: 84px;
+            height: auto;
+            display: block;
+        }
+        .pmagic-powered .powered-text {
+            white-space: nowrap;
+        }
+        #mainApp .pmagic-powered {
+            margin-bottom: 84px;
+        }
+        @media (min-width: 1024px) {
+            #mainApp .pmagic-powered {
+                margin-bottom: 24px;
+            }
+        }
+
         /* 3. 内容区底部留出导航栏空间 */
         .page { padding-bottom: 72px; }
 
@@ -1833,6 +1869,10 @@
                     <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleRegister()">注 册</button>
                     <div class="form-footer">已有账号？<a onclick="app.showLoginForm()">返回登录</a></div>
                 </div>
+            </div>
+            <div class="pmagic-powered" aria-label="Powered by PMagic AI">
+                <span class="powered-text">Powered by</span>
+                <img src="img/pmagic-ai-logo.svg" alt="PMagic AI">
             </div>
         </div>
         
@@ -2051,6 +2091,10 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="pmagic-powered" aria-label="Powered by PMagic AI">
+                <span class="powered-text">Powered by</span>
+                <img src="img/pmagic-ai-logo.svg" alt="PMagic AI">
             </div>
 
             <!-- 底部导航 -->

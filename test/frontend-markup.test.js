@@ -44,6 +44,12 @@ test('login page uses Utopia V2 branding and no WeChat login button', () => {
     assert.doesNotMatch(html, /微信登录/);
 });
 
+test('pages include PMagic AI powered footer', () => {
+    assert.match(html, /Powered by/);
+    assert.match(html, /pmagic-ai-logo\.svg/);
+    assert.match(html, /pmagic-powered/);
+});
+
 test('booking page has V2 purpose and attendee controls', () => {
     assert.match(html, /name="bookingPurpose"/);
     assert.match(html, /id="bookingAttendeeCount"/);
