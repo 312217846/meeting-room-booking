@@ -806,6 +806,121 @@
             padding: 16px;
         }
 
+        .booking-command-center {
+            display: grid;
+            gap: 18px;
+            padding: 28px;
+        }
+
+        .booking-workspace-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .section-eyebrow {
+            color: var(--gold-deep);
+            font-size: 12px;
+            font-weight: 850;
+        }
+
+        .booking-type-segment {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 6px;
+            border-radius: 16px;
+        }
+
+        .booking-workspace-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.25fr);
+            gap: 16px;
+        }
+
+        .booking-calendar-panel,
+        .booking-time-panel,
+        .booking-room-panel,
+        .booking-info-panel {
+            min-width: 0;
+        }
+
+        .booking-room-gallery .room-select-list,
+        #roomSelectList {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+        }
+
+        .room-select-item {
+            display: grid;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .booking-room-gallery .room-select-item {
+            display: grid;
+            align-items: stretch;
+        }
+
+        .room-select-thumbnail {
+            height: 118px;
+            border-radius: 16px;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,0.28), rgba(255,255,255,0)),
+                linear-gradient(135deg, #d8d2c8, #f7f1e5 48%, #becbd3);
+            border: 1px solid rgba(255,255,255,0.68);
+        }
+
+        .booking-info-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
+            gap: 16px;
+        }
+
+        .booking-summary-bar {
+            position: sticky;
+            bottom: 18px;
+            z-index: 20;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 14px;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.82);
+            box-shadow: 0 22px 58px rgba(84,100,116,0.16), inset 0 1px 0 rgba(255,255,255,0.9);
+            -webkit-backdrop-filter: blur(24px) saturate(175%);
+            backdrop-filter: blur(24px) saturate(175%);
+        }
+
+        .booking-summary-item {
+            min-width: 0;
+            display: grid;
+            gap: 4px;
+        }
+
+        .booking-summary-item span {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 760;
+        }
+
+        .booking-summary-item strong {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .booking-summary-action {
+            min-width: 112px;
+        }
+
         .booking-section {
             background: white;
             border-radius: 16px;
@@ -3129,6 +3244,9 @@
             .time-slots-grid {
                 grid-template-columns: repeat(4, minmax(112px, 1fr));
             }
+            .booking-command-center {
+                padding: 28px;
+            }
             .report-kpi-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
@@ -3141,6 +3259,31 @@
         }
 
         @media (max-width: 768px) {
+            .booking-command-center {
+                padding: 16px;
+            }
+
+            .booking-workspace-header,
+            .booking-info-grid {
+                grid-template-columns: 1fr;
+                display: grid;
+                align-items: start;
+            }
+
+            .booking-workspace-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .booking-summary-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                bottom: 84px;
+            }
+
+            .booking-summary-action {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+
             .login-reference-shell {
                 grid-template-rows: auto 1fr auto auto;
                 gap: 14px;
@@ -3457,43 +3600,43 @@
 
             <!-- 预订页 -->
             <div id="bookingPage" class="page">
-                <div class="booking-layout booking-page">
-                    <div class="booking-left-column">
-                        <div class="booking-section">
-                            <div class="booking-section-title">
-                                <span>📅</span> 选择会议室
-                            </div>
-                            <div class="room-type-filter" id="roomTypeFilter" role="group" aria-label="会议室类型">
-                                <button class="tab-btn active" type="button" data-room-type="normal" onclick="app.setRoomTypeFilter('normal')">会议室</button>
-                                <button class="tab-btn" type="button" data-room-type="training" onclick="app.setRoomTypeFilter('training')">培训室</button>
-                                <button class="tab-btn" type="button" data-room-type="vip" onclick="app.setRoomTypeFilter('vip')">VIP室</button>
-                            </div>
-                            <div class="room-select-container" id="roomSelectContainer"><div id="roomSelectList"></div>
-                                <!-- 动态渲染会议室选择区域 -->
-                            </div>
+                <div class="booking-command-center booking-page">
+                    <div class="booking-workspace-header">
+                        <div>
+                            <div class="section-eyebrow">新建预订</div>
+                            <h1 class="page-title">选择会议空间</h1>
                         </div>
-
-                        <div class="booking-section">
-                            <div class="booking-section-title">
-                                <span>📆</span> 选择日期
-                            </div>
-                            <div class="date-selector" id="dateSelector"></div>
-                        </div>
+                        <div class="booking-hours-note">可预订时间：08:00-20:00，每次以30分钟为单位。</div>
                     </div>
 
-                    <div class="booking-right-column">
-                        <div class="booking-section time-selection-area">
-                            <div class="booking-section-title">
-                                <span>⏰</span> 选择时间段
-                            </div>
-                            <div class="time-slots-grid time-grid" id="timeGrid"></div>
-                            <div class="booking-hours-note">可预订时间：08:00-20:00，每次以30分钟为单位。</div>
-                        </div>
+                    <div class="room-type-filter booking-type-segment" id="roomTypeFilter" role="group" aria-label="会议室类型">
+                        <button class="tab-btn active" type="button" data-room-type="normal" onclick="app.setRoomTypeFilter('normal')">会议室</button>
+                        <button class="tab-btn" type="button" data-room-type="training" onclick="app.setRoomTypeFilter('training')">培训室</button>
+                        <button class="tab-btn" type="button" data-room-type="vip" onclick="app.setRoomTypeFilter('vip')">VIP室</button>
+                    </div>
 
-                        <div class="booking-section">
-                            <div class="booking-section-title">
-                                <span>📝</span> 预订信息
-                            </div>
+                    <div class="booking-workspace-grid">
+                        <section class="booking-section booking-calendar-panel">
+                            <div class="booking-section-title"><span>📆</span> 选择日期</div>
+                            <div class="date-selector" id="dateSelector"></div>
+                        </section>
+
+                        <section class="booking-section booking-time-panel time-selection-area">
+                            <div class="booking-section-title"><span>⏰</span> 选择时间</div>
+                            <div class="time-slots-grid time-grid" id="timeGrid"></div>
+                        </section>
+                    </div>
+
+                    <section class="booking-section booking-room-panel">
+                        <div class="booking-section-title"><span>🏢</span> 选择会议室</div>
+                        <div class="room-select-container booking-room-gallery" id="roomSelectContainer">
+                            <div id="roomSelectList"></div>
+                        </div>
+                    </section>
+
+                    <section class="booking-section booking-info-panel">
+                        <div class="booking-section-title"><span>📝</span> 预订信息</div>
+                        <div class="booking-info-grid">
                             <div class="form-group">
                                 <label class="form-label">预订用途 *</label>
                                 <div class="purpose-options" role="radiogroup" aria-label="预订用途">
@@ -3511,8 +3654,15 @@
                                 <div class="attendee-helper">当前填写：<span id="bookingAttendeeCountValue">1</span> 人</div>
                             </div>
                         </div>
+                    </section>
 
-                        <button class="submit-btn" id="submitBookingBtn" onclick="app.submitBooking()" disabled>确认预订</button>
+                    <div class="booking-summary-bar">
+                        <div class="booking-summary-item"><span>日期</span><strong id="bookingSummaryDate">请选择日期</strong></div>
+                        <div class="booking-summary-item"><span>时间</span><strong id="bookingSummaryTime">请选择时间</strong></div>
+                        <div class="booking-summary-item"><span>会议室</span><strong id="bookingSummaryRoom">请选择会议室</strong></div>
+                        <div class="booking-summary-item"><span>用途</span><strong id="bookingSummaryPurpose">见客</strong></div>
+                        <div class="booking-summary-item"><span>人数</span><strong id="bookingSummaryAttendees">1 人</strong></div>
+                        <button class="submit-btn booking-summary-action" id="submitBookingBtn" onclick="app.submitBooking()" disabled>下一步</button>
                     </div>
                 </div>
             </div>

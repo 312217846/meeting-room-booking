@@ -849,6 +849,7 @@ const app = {
         this.selectedTimeSlots = [];
         this.generateDates();
         this.renderTimeSlots();
+        this.updateSubmitButtonState();
     },
 
     renderRoomSelect() {
@@ -900,7 +901,7 @@ const app = {
             const isSelected = this.selectedRoom?.id === room.id;
             const item = document.createElement('div');
             item.className = `room-select-item ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`;
-            item.innerHTML = `<div class="room-select-info"><div class="room-select-name">${room.name} <span style="color:${isVip ? 'var(--vip-gold)' : 'var(--primary-dark)'}">${roomTypeLabel}</span></div><div class="room-select-meta">${room.location || room.floor || ''} · ${room.capacity}人</div></div>${isLocked ? '<span style="color:var(--text-secondary)">🔒</span>' : ''}`;
+            item.innerHTML = `<div class="room-select-thumbnail" aria-hidden="true"></div><div class="room-select-info"><div class="room-select-name">${room.name} <span style="color:${isVip ? 'var(--vip-gold)' : 'var(--primary-dark)'}">${roomTypeLabel}</span></div><div class="room-select-meta">${room.location || room.floor || ''} · ${room.capacity}人</div></div>${isLocked ? '<span style="color:var(--text-secondary)">🔒</span>' : ''}`;
             if (!isLocked) {
                 item.onclick = () => { this.selectedRoom = room; this.selectedTimeSlots = []; this.renderRoomSelect(); this.renderTimeSlots(); this.updateSubmitButtonState(); };
             }
@@ -1000,6 +1001,28 @@ const app = {
         const btn = document.getElementById('submitBookingBtn');
         if (!btn) return;
         btn.disabled = !(this.selectedRoom && this.selectedDate && this.selectedTimeSlots.length > 0);
+        this.updateBookingSummary();
+    },
+
+    getSelectedTimeRangeLabel() {
+        if (!this.selectedTimeSlots || this.selectedTimeSlots.length === 0) return '请选择时间';
+        const sorted = this.getSortedTimeSlots(this.selectedTimeSlots);
+        return `${sorted[0]} - ${this.getEndTime(sorted[sorted.length - 1])}`;
+    },
+
+    updateBookingSummary() {
+        const dateEl = document.getElementById('bookingSummaryDate');
+        const timeEl = document.getElementById('bookingSummaryTime');
+        const roomEl = document.getElementById('bookingSummaryRoom');
+        const purposeEl = document.getElementById('bookingSummaryPurpose');
+        const attendeesEl = document.getElementById('bookingSummaryAttendees');
+        if (dateEl) dateEl.textContent = this.selectedDate || '请选择日期';
+        if (timeEl) timeEl.textContent = this.getSelectedTimeRangeLabel();
+        if (roomEl) roomEl.textContent = this.selectedRoom?.name || '请选择会议室';
+        const purpose = document.querySelector('input[name="bookingPurpose"]:checked')?.value || '见客';
+        if (purposeEl) purposeEl.textContent = purpose;
+        const attendeeCount = document.getElementById('bookingAttendeeCount')?.value || '1';
+        if (attendeesEl) attendeesEl.textContent = `${attendeeCount} 人`;
     },
 
     setupBookingAttendeeCountControl() {
@@ -1007,9 +1030,17 @@ const app = {
         const value = document.getElementById('bookingAttendeeCountValue');
         if (!input || !value || input.dataset.bound === 'true') return;
 
-        const syncValue = () => { value.textContent = input.value; };
+        const syncValue = () => {
+            value.textContent = input.value;
+            this.updateBookingSummary();
+        };
         syncValue();
         input.addEventListener('input', syncValue);
+        document.querySelectorAll('input[name="bookingPurpose"]').forEach(inputEl => {
+            if (inputEl.dataset.summaryBound === 'true') return;
+            inputEl.addEventListener('change', () => this.updateBookingSummary());
+            inputEl.dataset.summaryBound = 'true';
+        });
         input.dataset.bound = 'true';
     },
 
@@ -1022,6 +1053,7 @@ const app = {
         const attendeeCountValue = document.getElementById('bookingAttendeeCountValue');
         if (attendeeCount) attendeeCount.value = '1';
         if (attendeeCountValue) attendeeCountValue.textContent = attendeeCount?.value || '1';
+        this.updateBookingSummary();
     },
 
     // ==================== 提交预订 ====================
