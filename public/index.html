@@ -2019,6 +2019,10 @@
             padding: 28px;
         }
 
+        .login-page.login-reference-shell {
+            overflow-y: auto;
+        }
+
         .login-brand-bar,
         .login-legal-bar {
             width: min(100%, 1280px);
@@ -3185,7 +3189,7 @@
                 justify-content: center;
                 flex-wrap: wrap;
             }
-            .pmagic-powered {
+            .login-reference-shell .pmagic-powered {
                 margin-top: 4px;
             }
             .report-apple-dashboard {
@@ -3320,14 +3324,14 @@
                     <div id="loginForm">
                         <div class="login-card-title">用户登录</div>
                         <div class="login-form-row phone-row">
-                            <span class="login-input-icon">□</span>
-                            <button class="login-country-code" type="button">+852⌄</button>
-                            <input type="tel" id="loginPhone" class="form-input login-input" placeholder="输入手机号码">
+                            <span class="login-input-icon" aria-hidden="true">□</span>
+                            <button class="login-country-code" type="button" aria-label="香港区号 +852">+852⌄</button>
+                            <input type="tel" id="loginPhone" class="form-input login-input" placeholder="输入手机号码" aria-label="香港手机号">
                         </div>
                         <div class="login-form-row">
-                            <span class="login-input-icon">◇</span>
-                            <input type="password" id="loginPassword" class="form-input login-input" placeholder="输入密码">
-                            <span class="login-input-eye">◎</span>
+                            <span class="login-input-icon" aria-hidden="true">◇</span>
+                            <input type="password" id="loginPassword" class="form-input login-input" placeholder="输入密码" aria-label="密码">
+                            <span class="login-input-eye" aria-hidden="true">◎</span>
                         </div>
                         <div class="login-card-options">
                             <label class="login-remember"><input type="checkbox"> 记住我</label>
@@ -3341,6 +3345,9 @@
                     <div id="registerForm" class="login-register-panel" style="display:none;">
                         <div class="login-card-title">账号申请</div>
                         <p class="login-admin-note">请联系管理员开通账号后登录。</p>
+                        <input type="hidden" id="regName" value="">
+                        <input type="hidden" id="regPhone" value="">
+                        <input type="hidden" id="regPassword" value="">
                         <button class="login-alt-action" type="button" onclick="app.showLoginForm()">返回登录</button>
                     </div>
                 </div>

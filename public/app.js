@@ -483,7 +483,7 @@ const app = {
             console.error('登录失败:', error);
             this.showToast('登录失败，请重试', 'error');
         } finally {
-            if (btn) { btn.classList.remove('btn-loading'); btn.textContent = '登 录'; }
+            if (btn) { btn.classList.remove('btn-loading'); btn.textContent = '登录'; }
         }
     },
 
