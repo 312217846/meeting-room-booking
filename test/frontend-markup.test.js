@@ -194,6 +194,12 @@ test('admin reports expose responsive dashboard anchors and export controls', ()
     assert.match(appJs, /report-donut-ring/);
     assert.match(appJs, /report-line-path/);
     assert.match(appJs, /report-line-area/);
+    assert.match(html, /report-ranking-glass/);
+    assert.match(html, /stroke-width:\s*2\.6/);
+    assert.match(html, /height:\s*8px/);
+    assert.match(appJs, /class="chart-row report-ranking-glass"/);
+    assert.match(appJs, /class="chart-bar-fill"/);
+    assert.match(appJs, /r="3"/);
 });
 
 test('admin room and user management expose mobile card interactions', () => {

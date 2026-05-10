@@ -1679,7 +1679,7 @@ const app = {
                     <line class="report-line-grid" x1="${padX}" y1="${height - padY}" x2="${width - padX}" y2="${height - padY}"></line>
                     <path class="report-line-area" d="${areaPath}"></path>
                     <path class="report-line-path" d="${linePath}"></path>
-                    ${activePoints.filter((_, index) => index % pointStep === 0).map(point => `<circle class="report-line-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4"><title>${this.escapeHtml(point.label)} ${point.value}次</title></circle>`).join('')}
+                    ${activePoints.filter((_, index) => index % pointStep === 0).map(point => `<circle class="report-line-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3"><title>${this.escapeHtml(point.label)} ${point.value}次</title></circle>`).join('')}
                 </svg>
                 <div class="report-line-axis">${axisLabels.map(point => `<span>${this.escapeHtml(point.label)}</span>`).join('')}</div>
                 <div class="report-line-meta"><span>峰值 ${this.escapeHtml(max)} 次</span><span>走势曲线</span></div>
@@ -1698,7 +1698,7 @@ const app = {
             const count = this.getReportCount(item);
             const minutes = Number(item.total_minutes || 0);
             const hoursText = minutes > 0 ? ` · ${Math.round(minutes / 60 * 10) / 10}h` : '';
-            return `<div class="chart-row"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${count / max * 100}%;background:${barColor}"></div><span class="chart-value">${count}次${hoursText}</span></div></div>`;
+            return `<div class="chart-row report-ranking-glass"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar"><span class="chart-bar-fill" style="width:${count / max * 100}%;background:${barColor}"></span></div><span class="chart-value">${count}次${hoursText}</span></div></div>`;
         }).join('')}</div>`;
     },
 
