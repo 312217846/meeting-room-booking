@@ -49,6 +49,20 @@ test('login page uses Utopia V2 branding and no WeChat login button', () => {
     assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-login-bg-gpt.png')), true);
 });
 
+test('login page exposes reference-style glass city harbor layout anchors', () => {
+    assert.match(html, /hong-kong-harbor-login-v2\.png/);
+    assert.match(html, /login-brand-bar/);
+    assert.match(html, /login-language-select/);
+    assert.match(html, /login-iso-hero/);
+    assert.match(html, /login-glass-card/);
+    assert.match(html, /login-form-row phone-row/);
+    assert.match(html, /login-card-options/);
+    assert.match(html, /login-alt-action/);
+    assert.match(html, /联系管理员开通账号/);
+    assert.doesNotMatch(html, /立即注册/);
+    assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-harbor-login-v2.png')), true);
+});
+
 test('file preview login enters the app without credentials', async () => {
     const app = loadFrontendApp({ location: { protocol: 'file:', search: '' } });
     let previewUser = null;
@@ -142,6 +156,23 @@ test('booking page exposes room type filters and office-hour behavior hooks', ()
     assert.match(html, /booking-right-column/);
 });
 
+test('booking page exposes reference-style workspace and summary anchors', () => {
+    assert.match(html, /booking-command-center/);
+    assert.match(html, /booking-workspace-grid/);
+    assert.match(html, /booking-calendar-panel/);
+    assert.match(html, /booking-time-panel/);
+    assert.match(html, /booking-room-gallery/);
+    assert.match(html, /booking-summary-bar/);
+    assert.match(html, /bookingSummaryDate/);
+    assert.match(html, /bookingSummaryTime/);
+    assert.match(html, /bookingSummaryRoom/);
+    assert.match(html, /bookingSummaryPurpose/);
+    assert.match(html, /bookingSummaryAttendees/);
+    assert.match(appJs, /updateBookingSummary/);
+    assert.match(appJs, /getSelectedTimeRangeLabel/);
+    assert.match(appJs, /room-select-thumbnail/);
+});
+
 test('booking calendar follows the one-year booking horizon', () => {
     const app = loadFrontendApp();
     assert.equal(app.isDateWithinBookingHorizon(new Date('2026-06-15T00:00:00'), new Date('2026-05-09T00:00:00')), true);
@@ -211,6 +242,19 @@ test('admin room and user management expose mobile card interactions', () => {
     assert.match(appJs, /renderAdminUserCards/);
     assert.match(appJs, /mobile-admin-card/);
     assert.match(appJs, /mobile-card-actions/);
+});
+
+test('admin console exposes reference-style glass management shell', () => {
+    assert.match(html, /admin-reference-console/);
+    assert.match(html, /admin-console-header/);
+    assert.match(html, /admin-console-nav/);
+    assert.match(html, /admin-kpi-strip/);
+    assert.match(html, /admin-management-card/);
+    assert.match(html, /admin-action-icon/);
+    assert.match(html, /report-glass-orbit/);
+    assert.match(html, /report-chart-soft/);
+    assert.match(html, /report-export-glass/);
+    assert.match(appJs, /report-chart-soft/);
 });
 
 test('admin controls normalize database boolean flags from MySQL values', () => {
