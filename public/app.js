@@ -241,6 +241,66 @@ const app = {
         this.updateSubmitButtonState();
     },
 
+    filterRooms(type = 'all') {
+        this.roomFilter = type === 'available' ? 'available' : 'all';
+        document.querySelectorAll('.tab-btn[onclick*="filterRooms"]').forEach(button => {
+            const onclick = button.getAttribute('onclick') || '';
+            const active = onclick.includes(`'${this.roomFilter}'`) || onclick.includes(`"${this.roomFilter}"`);
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        return this.renderRooms();
+    },
+
+    buildRoomDailyTimeline(roomBookings = [], nowMinutes = null) {
+        const dayStart = BOOKING_START_MINUTES;
+        const dayEnd = BOOKING_END_MINUTES;
+        const dayTotal = dayEnd - dayStart;
+        let occupiedMinutes = 0;
+        let isBusy = false;
+
+        const timelineBlocks = (roomBookings || []).map(booking => {
+            const start = this.timeToMinutes(booking.start_time || booking.startTime || '08:00');
+            const end = this.timeToMinutes(booking.end_time || booking.endTime || '09:00');
+            if (start === null || end === null) return '';
+            const clampedStart = Math.max(start, dayStart);
+            const clampedEnd = Math.min(end, dayEnd);
+            if (clampedEnd <= clampedStart) return '';
+
+            occupiedMinutes += clampedEnd - clampedStart;
+            if (Number.isFinite(nowMinutes) && nowMinutes >= start && nowMinutes < end) isBusy = true;
+
+            const leftPct = ((clampedStart - dayStart) / dayTotal * 100).toFixed(2);
+            const widthPct = ((clampedEnd - clampedStart) / dayTotal * 100).toFixed(2);
+            const startLabel = this.minutesToTime(clampedStart);
+            const endLabel = this.minutesToTime(clampedEnd);
+            const title = this.escapeHtml(booking.title || booking.user_name || booking.userName || '已预订');
+            const timeLabel = `${startLabel}-${endLabel}`;
+            return `<div class="room-timeline-booking" style="left:${leftPct}%;width:${widthPct}%" title="${this.escapeHtml(`${timeLabel} ${title}`)}"><span class="room-timeline-booking-label">${this.escapeHtml(timeLabel)}</span></div>`;
+        }).filter(Boolean).join('');
+
+        const nowMarker = Number.isFinite(nowMinutes) && nowMinutes >= dayStart && nowMinutes <= dayEnd
+            ? `<span class="room-timeline-now" style="left:${((nowMinutes - dayStart) / dayTotal * 100).toFixed(2)}%" aria-label="当前时间"></span>`
+            : '';
+        const axisLabels = [];
+        for (let minutes = dayStart; minutes <= dayEnd; minutes += 120) {
+            const leftPct = ((minutes - dayStart) / dayTotal * 100).toFixed(2);
+            axisLabels.push(`<span style="left:${leftPct}%">${this.minutesToTime(minutes)}</span>`);
+        }
+        const occupiedHours = Math.round(occupiedMinutes / 60 * 10) / 10;
+        const emptyState = timelineBlocks ? '' : '<span class="room-timeline-empty">今日暂无预订</span>';
+
+        return {
+            html: `<div class="room-day-timeline" aria-label="今日预订时间轴 08:00至20:00">
+                <div class="room-timeline-head"><span>今日预订</span><span>${occupiedHours}h 已占用</span></div>
+                <div class="room-timeline-track">${emptyState}${timelineBlocks}${nowMarker}</div>
+                <div class="room-timeline-axis" aria-hidden="true">${axisLabels.join('')}</div>
+            </div>`,
+            occupiedMinutes,
+            isBusy
+        };
+    },
+
     getBookingOccupantLabel(booking) {
         const profileParts = [booking.region, booking.groupName || booking.group_name, booking.englishName || booking.english_name, booking.lastName || booking.last_name]
             .map(part => String(part || '').trim())
@@ -702,34 +762,12 @@ const app = {
             }
             if (!Array.isArray(equipment)) equipment = [];
 
-            // 今日时间轴
             const roomBookings = todayBookings.filter(b => (b.room_id || b.roomId) === room.id);
-            let timelineBlocks = '', statusTag = '', occupiedMinutes = 0;
-            const dayStart = 480, dayEnd = 1080, dayTotal = 600;
+            const timeline = this.buildRoomDailyTimeline(roomBookings, nowMinutes);
 
-            roomBookings.forEach(b => {
-                const bookingStart = this.timeToMinutes(b.start_time || b.startTime || '08:00');
-                const bookingEnd = this.timeToMinutes(b.end_time || b.endTime || '09:00');
-                if (bookingStart === null || bookingEnd === null) return;
-                const sMin = Math.max(bookingStart, dayStart);
-                const eMin = Math.min(bookingEnd, dayEnd);
-                if (eMin > sMin) {
-                    occupiedMinutes += (eMin - sMin);
-                    const leftPct = ((sMin - dayStart) / dayTotal * 100).toFixed(2);
-                    const widthPct = ((eMin - sMin) / dayTotal * 100).toFixed(2);
-                    const tip = `${(b.start_time || b.startTime || '').substring(0, 5)}-${(b.end_time || b.endTime || '').substring(0, 5)} ${b.user_name || b.userName || ''}`;
-                    timelineBlocks += `<div class="tl-block" style="left:${leftPct}%;width:${widthPct}%" data-tip="${tip}"></div>`;
-                }
-            });
-
-            const occupiedRatio = occupiedMinutes / dayTotal;
-            const isBusy = roomBookings.some(b => {
-                const bookingStart = this.timeToMinutes(b.start_time || b.startTime || '08:00');
-                const bookingEnd = this.timeToMinutes(b.end_time || b.endTime || '09:00');
-                return bookingStart !== null && bookingEnd !== null && nowMinutes >= bookingStart && nowMinutes < bookingEnd;
-            });
-            statusTag = occupiedRatio >= 0.7 ? '<span class="room-status-tag full">已满</span>' :
-                         isBusy ? '<span class="room-status-tag busy">使用中</span>' :
+            const occupiedRatio = timeline.occupiedMinutes / (BOOKING_END_MINUTES - BOOKING_START_MINUTES);
+            const statusTag = occupiedRatio >= 0.7 ? '<span class="room-status-tag full">已满</span>' :
+                         timeline.isBusy ? '<span class="room-status-tag busy">使用中</span>' :
                          '<span class="room-status-tag free">空闲</span>';
 
             const card = document.createElement('div');
@@ -749,8 +787,7 @@ const app = {
                     <div class="room-location">📍 ${room.location || room.floor || ''}</div>
                     <div class="room-equipment">${eqHtml}</div>
                 </div>
-                <div class="room-timeline-bar">${timelineBlocks}</div>
-                <div class="room-timeline-labels"><span>08:00</span><span>12:00</span><span>18:00</span></div>`;
+                ${timeline.html}`;
             card.onclick = () => this.handleRoomClick(room);
             container.appendChild(card);
         });
@@ -1626,7 +1663,7 @@ const app = {
     },
 
     getReportPalette() {
-        return ['#C9A96E', '#31BFA6', '#4A90D9', '#7F62FF', '#E08AB8', '#9C7B3C'];
+        return ['#C9A96E', '#B8C2CC', '#D8DEE7', '#A9B5C2', '#E8D5A5', '#9C7B3C'];
     },
 
     renderReportDonut(container, title, items, labelBuilder) {
@@ -1708,13 +1745,18 @@ const app = {
                             <stop offset="0%" stop-color="#E5C983" stop-opacity="0.34"></stop>
                             <stop offset="100%" stop-color="#E5C983" stop-opacity="0.02"></stop>
                         </linearGradient>
+                        <filter id="reportLineGlow" x="-18%" y="-34%" width="136%" height="168%">
+                            <feDropShadow dx="0" dy="0" stdDeviation="2.2" flood-color="#B8C2CC" flood-opacity="0.26"></feDropShadow>
+                            <feDropShadow dx="0" dy="5" stdDeviation="3.2" flood-color="#C9A96E" flood-opacity="0.2"></feDropShadow>
+                        </filter>
                     </defs>
                     <line class="report-line-grid" x1="${padX}" y1="${padY}" x2="${width - padX}" y2="${padY}"></line>
                     <line class="report-line-grid" x1="${padX}" y1="${height / 2}" x2="${width - padX}" y2="${height / 2}"></line>
                     <line class="report-line-grid" x1="${padX}" y1="${height - padY}" x2="${width - padX}" y2="${height - padY}"></line>
                     <path class="report-line-area" d="${areaPath}"></path>
-                    <path class="report-line-path" d="${linePath}"></path>
-                    ${activePoints.filter((_, index) => index % pointStep === 0).map(point => `<circle class="report-line-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3"><title>${this.escapeHtml(point.label)} ${point.value}次</title></circle>`).join('')}
+                    <path class="report-line-depth-rail" d="${linePath}"></path>
+                    <path class="report-line-path" d="${linePath}" filter="url(#reportLineGlow)"></path>
+                    ${activePoints.filter((_, index) => index % pointStep === 0).map(point => `<circle class="report-line-point-halo" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="5.4"></circle><circle class="report-line-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.4"><title>${this.escapeHtml(point.label)} ${point.value}次</title></circle>`).join('')}
                 </svg>
                 <div class="report-line-axis">${axisLabels.map(point => `<span>${this.escapeHtml(point.label)}</span>`).join('')}</div>
                 <div class="report-line-meta"><span>峰值 ${this.escapeHtml(max)} 次</span><span>走势曲线</span></div>

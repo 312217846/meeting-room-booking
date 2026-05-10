@@ -156,6 +156,49 @@ test('booking page exposes room type filters and office-hour behavior hooks', ()
     assert.match(html, /booking-right-column/);
 });
 
+test('room list availability filter is callable from inline buttons', () => {
+    const app = loadFrontendApp();
+    let renderCount = 0;
+    app.renderRooms = () => { renderCount += 1; };
+
+    app.filterRooms('available');
+
+    assert.equal(app.roomFilter, 'available');
+    assert.equal(renderCount, 1);
+});
+
+test('room list renders today bookings as an office-hour timeline', () => {
+    const app = loadFrontendApp();
+    const timeline = app.buildRoomDailyTimeline([
+        {
+            start_time: '09:00:00',
+            end_time: '10:30:00',
+            title: '晨会',
+            user_name: '张小明'
+        },
+        {
+            startTime: '14:00',
+            endTime: '15:00',
+            title: '培训'
+        }
+    ], 9 * 60 + 45);
+
+    assert.equal(timeline.occupiedMinutes, 150);
+    assert.equal(timeline.isBusy, true);
+    assert.match(timeline.html, /room-day-timeline/);
+    assert.match(timeline.html, /room-timeline-booking/);
+    assert.match(timeline.html, /room-timeline-now/);
+    assert.match(timeline.html, /room-timeline-axis/);
+    assert.match(timeline.html, /08:00/);
+    assert.match(timeline.html, /20:00/);
+    assert.match(timeline.html, /09:00-10:30/);
+    assert.match(html, /--silver-accent: #B8C2CC/);
+    assert.match(html, /room-day-timeline/);
+    assert.match(html, /room-timeline-track/);
+    assert.match(html, /room-timeline-now/);
+    assert.match(html, /rgba\(184,194,204,0\.95\)/);
+});
+
 test('booking page exposes reference-style workspace and summary anchors', () => {
     assert.match(html, /booking-command-center/);
     assert.match(html, /booking-workspace-grid/);
@@ -226,11 +269,24 @@ test('admin reports expose responsive dashboard anchors and export controls', ()
     assert.match(appJs, /report-line-path/);
     assert.match(appJs, /report-line-area/);
     assert.match(html, /report-ranking-glass/);
-    assert.match(html, /stroke-width:\s*2\.6/);
+    assert.match(html, /report-line-chart::before/);
+    assert.match(html, /report-donut-wrap::before/);
+    assert.match(html, /transform:\s*perspective\(640px\) rotateX\(3deg\)/);
+    assert.match(html, /conic-gradient\(from 140deg/);
+    assert.match(appJs, /reportLineGlow/);
+    assert.match(appJs, /feDropShadow/);
+    assert.match(appJs, /#B8C2CC/);
+    assert.doesNotMatch(appJs, /#31BFA6/);
+    assert.match(appJs, /report-line-depth-rail/);
+    assert.match(appJs, /report-line-point-halo/);
+    assert.match(html, /rgba\(184,194,204,0\.18\)/);
+    assert.match(html, /rgba\(184,194,204,0\.22\)/);
+    assert.match(html, /stroke-width:\s*1\.6/);
+    assert.match(html, /stroke-width:\s*1\.45/);
     assert.match(html, /height:\s*8px/);
     assert.match(appJs, /class="chart-row report-ranking-glass"/);
     assert.match(appJs, /class="chart-bar-fill"/);
-    assert.match(appJs, /r="3"/);
+    assert.match(appJs, /r="2\.4"/);
 });
 
 test('admin room and user management expose mobile card interactions', () => {
