@@ -1589,6 +1589,9 @@ const app = {
 
     renderReports() {
         if (!this.reportData) return;
+        ['reportAttendeeInsight', 'roomUsageChart', 'userUsageChart', 'reportRegionChart', 'reportGroupChart', 'reportTimeHeatmapChart', 'bookingUsageChart'].forEach(id => {
+            document.getElementById(id)?.classList.add('report-chart-soft');
+        });
         const periodEl = document.getElementById('reportPeriod');
         if (periodEl) periodEl.textContent = `${this.currentReportPeriod.year}年${this.currentReportPeriod.month}月`;
         this.renderReportHeroMetrics();

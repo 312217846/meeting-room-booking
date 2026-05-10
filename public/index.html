@@ -2739,6 +2739,23 @@
             backdrop-filter: blur(24px) saturate(175%);
         }
 
+        .report-glass-orbit {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-glass-orbit::after {
+            content: "";
+            position: absolute;
+            right: -90px;
+            top: -120px;
+            width: 280px;
+            height: 280px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(229,201,131,0.24), rgba(229,201,131,0));
+            pointer-events: none;
+        }
+
         .report-apple-dashboard {
             grid-template-columns: minmax(0, 0.95fr) minmax(280px, 1.05fr);
             align-items: stretch;
@@ -2905,6 +2922,19 @@
             background: linear-gradient(145deg, rgba(255,255,255,0.74), rgba(247,251,255,0.52));
         }
 
+        .report-chart-soft {
+            background: rgba(255,255,255,0.58);
+            border-color: rgba(255,255,255,0.74);
+        }
+
+        .report-export-glass {
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.58);
+            border: 1px solid rgba(255,255,255,0.74);
+            box-shadow: var(--crystal-shadow-soft);
+        }
+
         .report-kpi-card::after {
             content: "";
             position: absolute;
@@ -2966,6 +2996,8 @@
         }
 
         .report-donut-segment {
+            stroke-width: 4.8;
+            filter: drop-shadow(0 5px 9px rgba(156,123,60,0.1));
             transition: stroke-dashoffset 0.24s ease, opacity 0.24s ease;
         }
 
@@ -3078,10 +3110,14 @@
             filter: drop-shadow(0 7px 12px rgba(156,123,60,0.12));
         }
 
+        .report-chart-soft .report-line-path {
+            stroke-width: 2.2;
+        }
+
         .report-line-point {
             fill: #fff;
             stroke: #C9A96E;
-            stroke-width: 2;
+            stroke-width: 1.8;
             filter: drop-shadow(0 3px 7px rgba(156,123,60,0.14));
         }
 
@@ -3806,7 +3842,7 @@
                             <div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>英文名</th><th>手机</th><th>角色</th><th>地区</th><th>组别</th><th>权限</th><th>每日上限</th><th>状态</th><th>重置密码</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-reports" class="admin-tab-content">
-                            <div class="report-crystal-hero report-apple-dashboard">
+                            <div class="report-crystal-hero report-apple-dashboard report-glass-orbit">
                                 <div class="report-hero-copy">
                                     <div>
                                     <div class="report-card-subtitle">数据驾驶舱</div>
@@ -3827,9 +3863,9 @@
                             <div class="report-insight-strip" id="reportInsightStrip"></div>
                             <div class="report-kpi-grid" id="reportKpiGrid"></div>
                             <div class="report-primary-grid">
-                                <div class="report-card report-card-feature report-card-line" id="reportDailyTrendChart"></div>
-                                <div class="report-card report-card-donut" id="reportRoomTypeChart"></div>
-                                <div class="report-card report-card-donut" id="reportPurposeChart"></div>
+                                <div class="report-card report-card-feature report-card-line report-chart-soft" id="reportDailyTrendChart"></div>
+                                <div class="report-card report-card-donut report-chart-soft" id="reportRoomTypeChart"></div>
+                                <div class="report-card report-card-donut report-chart-soft" id="reportPurposeChart"></div>
                             </div>
                             <div class="report-dashboard-grid report-support-grid" id="reportDashboardGrid">
                                 <div class="report-card" id="reportAttendeeInsight"></div>
@@ -3840,7 +3876,7 @@
                                 <div class="report-card wide" id="reportTimeHeatmapChart"></div>
                                 <div class="report-card" id="bookingUsageChart"></div>
                             </div>
-                            <div class="report-export-toolbar" id="reportExportToolbar">
+                            <div class="report-export-toolbar report-export-glass" id="reportExportToolbar">
                                 <div class="report-card-subtitle">导出当前月份数据</div>
                                 <div class="report-export-actions">
                                     <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px;border-radius:999px;" onclick="app.exportReport('room')">导出会议室</button>
