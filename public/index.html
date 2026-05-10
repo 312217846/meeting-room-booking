@@ -1224,11 +1224,47 @@
             padding: 16px;
         }
 
+        .admin-reference-console {
+            display: grid;
+            gap: 18px;
+        }
+
+        .admin-console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+        }
+
+        #adminPage .section-eyebrow {
+            color: var(--gold-deep);
+            font-size: 12px;
+            font-weight: 850;
+        }
+
+        .admin-console-status {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.58);
+            border: 1px solid rgba(255,255,255,0.72);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 760;
+        }
+
         .admin-section {
             background: white;
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
+        }
+
+        .admin-kpi-strip {
+            padding: 18px;
+        }
+
+        .admin-management-card {
+            padding: 18px;
         }
 
         .admin-section-title {
@@ -1752,7 +1788,20 @@
         .form-footer { text-align:center; margin-top:16px; font-size:13px; color:var(--text-secondary); }
         .form-footer a { color:var(--primary); cursor:pointer; text-decoration:none; }
         .admin-tabs { display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+        .admin-console-nav {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            padding: 6px;
+            border: 1px solid rgba(255,255,255,0.72);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.42);
+        }
         .admin-tab { padding:8px 16px; border-radius:8px; font-size:14px; cursor:pointer; background:transparent; border:none; color:var(--text-secondary); }
+        .admin-console-nav .admin-tab {
+            min-height: 42px;
+            border-radius: 12px;
+        }
         .admin-tab.active { background:var(--primary); color:white; }
         .admin-tab-content { display:none; }
         .admin-tab-content.active { display:block; }
@@ -2627,6 +2676,13 @@
             box-shadow: 0 8px 18px rgba(95,117,139,0.12), inset 0 1px 0 rgba(255,255,255,0.82);
         }
 
+        .admin-action-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
         .admin-action-edit,
         .admin-action-reset {
             color: var(--gold-deep);
@@ -3391,6 +3447,24 @@
             .report-line-svg {
                 height: 160px;
             }
+            .admin-console-header {
+                display: grid;
+                align-items: start;
+            }
+            .admin-console-nav {
+                grid-template-columns: 1fr;
+            }
+            .admin-kpi-strip,
+            .admin-management-card {
+                padding: 14px;
+            }
+            .mobile-admin-card {
+                border-radius: 20px;
+                padding: 16px;
+            }
+            .mobile-card-actions {
+                grid-template-columns: 1fr 1fr;
+            }
             .admin-table-wrap {
                 display: none;
             }
@@ -3673,8 +3747,16 @@
 
             <!-- 管理员页 -->
             <div id="adminPage" class="page">
-                <div class="admin-page">
-                    <div class="admin-section">
+                <div class="admin-page admin-reference-console">
+                    <div class="admin-console-header">
+                        <div>
+                            <div class="section-eyebrow">管理后台</div>
+                            <h1 class="page-title">空间与用户运营</h1>
+                        </div>
+                        <div class="admin-console-status">默认管理员 · 本地预览</div>
+                    </div>
+
+                    <div class="admin-section admin-kpi-strip">
                         <div class="admin-section-title">📊 数据统计</div>
                         <div class="stats-grid">
                             <div class="stat-card">
@@ -3696,8 +3778,8 @@
                         </div>
                     </div>
 
-                    <div class="admin-section">
-                        <div class="admin-tabs">
+                    <div class="admin-section admin-management-card">
+                        <div class="admin-tabs admin-console-nav">
                             <button class="admin-tab active" data-tab="rooms" onclick="app.switchAdminTab('rooms')">会议室管理</button>
                             <button class="admin-tab" data-tab="users" onclick="app.switchAdminTab('users')">用户管理</button>
                             <button class="admin-tab" data-tab="reports" onclick="app.switchAdminTab('reports')">数据报表</button>

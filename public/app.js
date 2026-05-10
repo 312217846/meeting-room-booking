@@ -1232,8 +1232,8 @@ const app = {
                 <td><strong>${room.name}</strong></td><td>${roomType === 'vip' ? '<span class="vip-badge-small">VIP</span>' : this.getRoomTypeLabel(roomType)}</td><td>${room.capacity}人</td><td>${room.floor || '-'}</td><td>${room.location || '-'}</td><td>${eqStr}</td>
                 <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '启用' : '停用'}</span></td>
                 <td class="room-table-actions"><div class="admin-action-group">
-                    <button class="admin-action-btn admin-action-edit" onclick="app.editRoom(${room.id})">编辑</button>
-                    <button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteRoom(${room.id})">删除</button>
+                    <button class="admin-action-btn admin-action-icon admin-action-edit" onclick="app.editRoom(${room.id})">编辑</button>
+                    <button class="admin-action-btn admin-action-icon admin-action-danger" onclick="app.confirmDeleteRoom(${room.id})">删除</button>
                 </div></td></tr>`;
         }).join('');
     },
@@ -1270,8 +1270,8 @@ const app = {
                     <div class="mobile-card-field">状态<strong>${isActive ? '可预订' : '已停用'}</strong></div>
                 </div>
                 <div class="mobile-card-actions">
-                    <button class="admin-action-btn admin-action-edit" onclick="app.editRoom(${room.id})">编辑</button>
-                    <button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteRoom(${room.id})">删除</button>
+                    <button class="admin-action-btn admin-action-icon admin-action-edit" onclick="app.editRoom(${room.id})">编辑</button>
+                    <button class="admin-action-btn admin-action-icon admin-action-danger" onclick="app.confirmDeleteRoom(${room.id})">删除</button>
                 </div>
             </article>`;
         }).join('');
@@ -1323,12 +1323,12 @@ const app = {
             <td>${this.escapeHtml(this.formatBookingPermissions(user.booking_permissions))}</td>
             <td>${this.escapeHtml(this.formatDailyBookingLimit(user.daily_booking_limit_minutes))}</td>
             <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '正常' : '禁用'}</span></td>
-            <td><button class="admin-action-btn admin-action-reset" onclick="app.resetUserPassword(${user.id})">重置</button></td>
+            <td><button class="admin-action-btn admin-action-icon admin-action-reset" onclick="app.resetUserPassword(${user.id})">重置</button></td>
             <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
             <td><div class="admin-action-group">
-                <button class="admin-action-btn admin-action-edit" onclick="app.editUser(${user.id})">编辑</button>
-                <button class="admin-action-btn admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
-                ${canDelete ? `<button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
+                <button class="admin-action-btn admin-action-icon admin-action-edit" onclick="app.editUser(${user.id})">编辑</button>
+                <button class="admin-action-btn admin-action-icon admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
+                ${canDelete ? `<button class="admin-action-btn admin-action-icon admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
             </div></td></tr>`;
         }).join('');
     },
@@ -1364,10 +1364,10 @@ const app = {
                         <option value="premium" ${user.role === 'premium' ? 'selected' : ''}>高级员工</option>
                         <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理员</option>
                     </select>
-                    <button class="admin-action-btn admin-action-edit" onclick="app.editUser(${user.id})">编辑</button>
-                    <button class="admin-action-btn admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
-                    <button class="admin-action-btn admin-action-reset" onclick="app.resetUserPassword(${user.id})">重置密码</button>
-                    ${canDelete ? `<button class="admin-action-btn admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
+                    <button class="admin-action-btn admin-action-icon admin-action-edit" onclick="app.editUser(${user.id})">编辑</button>
+                    <button class="admin-action-btn admin-action-icon admin-action-toggle" onclick="app.toggleUserActive(${user.id})">${isActive ? '禁用' : '启用'}</button>
+                    <button class="admin-action-btn admin-action-icon admin-action-reset" onclick="app.resetUserPassword(${user.id})">重置密码</button>
+                    ${canDelete ? `<button class="admin-action-btn admin-action-icon admin-action-danger" onclick="app.confirmDeleteUser(${user.id})">删除</button>` : ''}
                 </div>
             </article>`;
         }).join('');
