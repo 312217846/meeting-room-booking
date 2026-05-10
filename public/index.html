@@ -806,26 +806,26 @@
             padding: 16px;
         }
 
-        .booking-command-center {
+        #bookingPage .booking-command-center {
             display: grid;
             gap: 18px;
             padding: 28px;
         }
 
-        .booking-workspace-header {
+        #bookingPage .booking-workspace-header {
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             gap: 16px;
         }
 
-        .section-eyebrow {
+        #bookingPage .section-eyebrow {
             color: var(--gold-deep);
             font-size: 12px;
             font-weight: 850;
         }
 
-        .booking-type-segment {
+        #bookingPage .booking-type-segment {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             max-width: 650px;
@@ -834,38 +834,34 @@
             border-radius: 16px;
         }
 
-        .booking-workspace-grid {
+        #bookingPage .booking-workspace-grid {
             display: grid;
             grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.25fr);
             gap: 16px;
         }
 
-        .booking-calendar-panel,
-        .booking-time-panel,
-        .booking-room-panel,
-        .booking-info-panel {
+        #bookingPage .booking-calendar-panel,
+        #bookingPage .booking-time-panel,
+        #bookingPage .booking-room-panel,
+        #bookingPage .booking-info-panel {
             min-width: 0;
         }
 
-        .booking-room-gallery .room-select-list,
-        #roomSelectList {
+        #bookingPage .booking-room-gallery .room-select-list,
+        #bookingPage #roomSelectList {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
             gap: 14px;
         }
 
-        .room-select-item {
+        #bookingPage .booking-room-gallery .room-select-item {
             display: grid;
             gap: 10px;
             overflow: hidden;
-        }
-
-        .booking-room-gallery .room-select-item {
-            display: grid;
             align-items: stretch;
         }
 
-        .room-select-thumbnail {
+        #bookingPage .room-select-thumbnail {
             height: 118px;
             border-radius: 16px;
             background:
@@ -874,13 +870,13 @@
             border: 1px solid rgba(255,255,255,0.68);
         }
 
-        .booking-info-grid {
+        #bookingPage .booking-info-grid {
             display: grid;
             grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
             gap: 16px;
         }
 
-        .booking-summary-bar {
+        #bookingPage .booking-summary-bar {
             position: sticky;
             bottom: 18px;
             z-index: 20;
@@ -897,19 +893,19 @@
             backdrop-filter: blur(24px) saturate(175%);
         }
 
-        .booking-summary-item {
+        #bookingPage .booking-summary-item {
             min-width: 0;
             display: grid;
             gap: 4px;
         }
 
-        .booking-summary-item span {
+        #bookingPage .booking-summary-item span {
             color: var(--text-secondary);
             font-size: 11px;
             font-weight: 760;
         }
 
-        .booking-summary-item strong {
+        #bookingPage .booking-summary-item strong {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -917,7 +913,7 @@
             font-size: 13px;
         }
 
-        .booking-summary-action {
+        #bookingPage .booking-summary-action {
             min-width: 112px;
         }
 
@@ -3244,7 +3240,7 @@
             .time-slots-grid {
                 grid-template-columns: repeat(4, minmax(112px, 1fr));
             }
-            .booking-command-center {
+            #bookingPage .booking-command-center {
                 padding: 28px;
             }
             .report-kpi-grid {
@@ -3259,27 +3255,27 @@
         }
 
         @media (max-width: 768px) {
-            .booking-command-center {
+            #bookingPage .booking-command-center {
                 padding: 16px;
             }
 
-            .booking-workspace-header,
-            .booking-info-grid {
+            #bookingPage .booking-workspace-header,
+            #bookingPage .booking-info-grid {
                 grid-template-columns: 1fr;
                 display: grid;
                 align-items: start;
             }
 
-            .booking-workspace-grid {
+            #bookingPage .booking-workspace-grid {
                 grid-template-columns: 1fr;
             }
 
-            .booking-summary-bar {
+            #bookingPage .booking-summary-bar {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 bottom: 84px;
             }
 
-            .booking-summary-action {
+            #bookingPage .booking-summary-action {
                 grid-column: 1 / -1;
                 width: 100%;
             }
