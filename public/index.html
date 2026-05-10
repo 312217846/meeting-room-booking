@@ -2445,6 +2445,8 @@
             border-radius: 18px;
             padding: 16px;
             box-shadow: var(--crystal-shadow-soft);
+            -webkit-backdrop-filter: blur(20px) saturate(170%);
+            backdrop-filter: blur(20px) saturate(170%);
         }
 
         .report-kpi-card {
@@ -2480,19 +2482,161 @@
             margin-bottom: 10px;
         }
 
-        .report-trend-bars {
-            display: flex;
-            align-items: end;
-            gap: 4px;
-            height: 116px;
-            padding-top: 12px;
+        .report-donut-chart {
+            display: grid;
+            grid-template-columns: 136px minmax(0, 1fr);
+            align-items: center;
+            gap: 16px;
+            min-height: 156px;
         }
 
-        .report-trend-bar {
-            flex: 1;
-            min-width: 8px;
-            border-radius: 999px 999px 4px 4px;
-            background: linear-gradient(180deg, #E5C983, #C9A96E);
+        .report-donut-wrap {
+            position: relative;
+            width: 136px;
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+        }
+
+        .report-donut-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 14px 24px rgba(108,91,52,0.12));
+        }
+
+        .report-donut-ring {
+            fill: none;
+            stroke-width: 4.8;
+            stroke-linecap: round;
+        }
+
+        .report-donut-track {
+            stroke: rgba(226,232,238,0.62);
+        }
+
+        .report-donut-segment {
+            transition: stroke-dashoffset 0.24s ease, opacity 0.24s ease;
+        }
+
+        .report-donut-center {
+            position: absolute;
+            inset: 31px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(255,255,255,0.78);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 10px 24px rgba(84,100,116,0.08);
+        }
+
+        .report-donut-total {
+            font-size: 24px;
+            font-weight: 850;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .report-donut-label {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .report-donut-legend {
+            display: grid;
+            gap: 9px;
+        }
+
+        .report-donut-legend-item {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+            min-height: 28px;
+            padding: 7px 9px;
+            border: 1px solid rgba(255,255,255,0.56);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.46);
+        }
+
+        .report-donut-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.7);
+        }
+
+        .report-donut-name {
+            min-width: 0;
+            font-size: 12px;
+            font-weight: 760;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .report-donut-percent {
+            font-size: 12px;
+            font-weight: 850;
+            color: var(--gold-deep);
+        }
+
+        .report-line-chart {
+            position: relative;
+            min-height: 198px;
+            padding: 10px 0 0;
+        }
+
+        .report-line-svg {
+            width: 100%;
+            height: 172px;
+            overflow: visible;
+        }
+
+        .report-line-grid {
+            stroke: rgba(137,151,166,0.16);
+            stroke-width: 1;
+        }
+
+        .report-line-area {
+            fill: url(#reportLineGoldArea);
+        }
+
+        .report-line-path {
+            fill: none;
+            stroke: url(#reportLineGoldStroke);
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 8px 14px rgba(156,123,60,0.18));
+        }
+
+        .report-line-point {
+            fill: #fff;
+            stroke: #C9A96E;
+            stroke-width: 3;
+            filter: drop-shadow(0 4px 8px rgba(156,123,60,0.16));
+        }
+
+        .report-line-axis {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .report-line-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
         }
 
         .chart-container {
@@ -2700,6 +2844,20 @@
             }
             .report-hour-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            .report-donut-chart {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: left;
+            }
+            .report-donut-legend {
+                width: 100%;
+            }
+            .report-line-chart {
+                min-height: 190px;
+            }
+            .report-line-svg {
+                height: 160px;
             }
             .admin-table-wrap {
                 display: none;

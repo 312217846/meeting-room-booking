@@ -1576,9 +1576,9 @@ const app = {
         }, 'linear-gradient(90deg,#4A90D9,#357ABD)');
 
         const bookings = this.reportData.bookingUsage || this.reportData.bookingReports || this.reportData.bookings || [];
-        this.renderReportRanking(document.getElementById('reportPurposeChart'), '用途分布', bookings, booking => `${booking.title || '-'} · ${this.getRoomTypeLabel(booking.room_type || booking)}`, 'linear-gradient(90deg,#31BFA6,#1D9B87)');
+        this.renderReportDonut(document.getElementById('reportPurposeChart'), '用途分布', bookings, booking => booking.title || '-');
         this.renderReportRanking(document.getElementById('bookingUsageChart'), '预订排行', bookings, booking => booking.title || booking.room_name || booking.roomName || booking.date || booking.booking_date || '-');
-        this.renderReportRanking(document.getElementById('reportRoomTypeChart'), '房型占比', this.reportData.roomTypeUsage || [], item => this.getRoomTypeLabel(item.room_type || item), 'linear-gradient(90deg,#E5C983,#9C7B3C)');
+        this.renderReportDonut(document.getElementById('reportRoomTypeChart'), '房型占比', this.reportData.roomTypeUsage || [], item => this.getRoomTypeLabel(item.room_type || item));
         this.renderReportRanking(document.getElementById('reportRegionChart'), '地区排行', this.reportData.regionUsage || [], item => item.region || '未填写', 'linear-gradient(90deg,#8FBFE8,#4A90D9)');
         this.renderReportRanking(document.getElementById('reportGroupChart'), '组别排行', this.reportData.groupUsage || [], item => item.group_name || item.groupName || '未填写', 'linear-gradient(90deg,#C7A6FF,#7F62FF)');
         this.renderReportTimeHeatmap();
@@ -1587,6 +1587,102 @@ const app = {
 
     getReportCount(item) {
         return Number(item?.booking_count ?? item?.total_bookings ?? item?.count ?? 0);
+    },
+
+    getReportPalette() {
+        return ['#C9A96E', '#31BFA6', '#4A90D9', '#7F62FF', '#E08AB8', '#9C7B3C'];
+    },
+
+    renderReportDonut(container, title, items, labelBuilder) {
+        if (!container) return;
+        const rankedItems = (items || []).filter(item => this.getReportCount(item) > 0).slice(0, 6);
+        if (rankedItems.length === 0) {
+            container.innerHTML = `<div class="report-card-title">${title}</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>`;
+            return;
+        }
+
+        const total = rankedItems.reduce((sum, item) => sum + this.getReportCount(item), 0);
+        const palette = this.getReportPalette();
+        let offset = 0;
+        const segments = rankedItems.map((item, index) => {
+            const count = this.getReportCount(item);
+            const percent = total > 0 ? count / total * 100 : 0;
+            const segment = `<circle class="report-donut-ring report-donut-segment" cx="18" cy="18" r="15.9155" pathLength="100" stroke="${palette[index % palette.length]}" stroke-dasharray="${percent.toFixed(2)} ${(100 - percent).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}"></circle>`;
+            offset += percent;
+            return segment;
+        }).join('');
+
+        container.innerHTML = `<div class="report-card-title">${title}</div>
+            <div class="report-donut-chart">
+                <div class="report-donut-wrap">
+                    <svg class="report-donut-svg" viewBox="0 0 36 36" role="img" aria-label="${this.escapeHtml(title)}圆盘图">
+                        <circle class="report-donut-ring report-donut-track" cx="18" cy="18" r="15.9155"></circle>
+                        <g transform="rotate(-90 18 18)">${segments}</g>
+                    </svg>
+                    <div class="report-donut-center">
+                        <div class="report-donut-total">${this.escapeHtml(total)}</div>
+                        <div class="report-donut-label">总计</div>
+                    </div>
+                </div>
+                <div class="report-donut-legend">${rankedItems.map((item, index) => {
+                    const count = this.getReportCount(item);
+                    const percent = total > 0 ? Math.round(count / total * 100) : 0;
+                    return `<div class="report-donut-legend-item">
+                        <span class="report-donut-dot" style="background:${palette[index % palette.length]}"></span>
+                        <span class="report-donut-name">${this.escapeHtml(labelBuilder(item))}</span>
+                        <span class="report-donut-percent">${percent}%</span>
+                    </div>`;
+                }).join('')}</div>
+            </div>`;
+    },
+
+    renderReportLineChart(container, title, trend) {
+        if (!container) return;
+        const values = (trend || []).map(item => Number(item.booking_count || 0));
+        if (values.length === 0 || Math.max(...values) === 0) {
+            container.innerHTML = `<div class="report-card-title">${title}</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>`;
+            return;
+        }
+
+        const width = 340, height = 156, padX = 18, padY = 18;
+        const max = Math.max(...values);
+        const step = values.length > 1 ? (width - padX * 2) / (values.length - 1) : 0;
+        const points = values.map((value, index) => {
+            const x = padX + step * index;
+            const y = height - padY - (value / max) * (height - padY * 2);
+            return { x, y, value, label: String((trend[index]?.booking_date || '')).slice(5) };
+        });
+        const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+        const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${height - padY} L ${points[0].x.toFixed(1)} ${height - padY} Z`;
+        const activePoints = points.filter(point => point.value > 0);
+        const pointStep = Math.max(1, Math.ceil(activePoints.length / 8));
+        const axisLabels = [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]].filter(Boolean);
+
+        container.innerHTML = `<div class="report-card-title">${title}</div>
+            <div class="report-card-subtitle">按日期查看当前月份预订热度</div>
+            <div class="report-line-chart">
+                <svg class="report-line-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${this.escapeHtml(title)}曲线图">
+                    <defs>
+                        <linearGradient id="reportLineGoldStroke" x1="0" x2="1" y1="0" y2="0">
+                            <stop offset="0%" stop-color="#E5C983"></stop>
+                            <stop offset="50%" stop-color="#C9A96E"></stop>
+                            <stop offset="100%" stop-color="#9C7B3C"></stop>
+                        </linearGradient>
+                        <linearGradient id="reportLineGoldArea" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0%" stop-color="#E5C983" stop-opacity="0.34"></stop>
+                            <stop offset="100%" stop-color="#E5C983" stop-opacity="0.02"></stop>
+                        </linearGradient>
+                    </defs>
+                    <line class="report-line-grid" x1="${padX}" y1="${padY}" x2="${width - padX}" y2="${padY}"></line>
+                    <line class="report-line-grid" x1="${padX}" y1="${height / 2}" x2="${width - padX}" y2="${height / 2}"></line>
+                    <line class="report-line-grid" x1="${padX}" y1="${height - padY}" x2="${width - padX}" y2="${height - padY}"></line>
+                    <path class="report-line-area" d="${areaPath}"></path>
+                    <path class="report-line-path" d="${linePath}"></path>
+                    ${activePoints.filter((_, index) => index % pointStep === 0).map(point => `<circle class="report-line-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4"><title>${this.escapeHtml(point.label)} ${point.value}次</title></circle>`).join('')}
+                </svg>
+                <div class="report-line-axis">${axisLabels.map(point => `<span>${this.escapeHtml(point.label)}</span>`).join('')}</div>
+                <div class="report-line-meta"><span>峰值 ${this.escapeHtml(max)} 次</span><span>走势曲线</span></div>
+            </div>`;
     },
 
     renderReportRanking(container, title, items, labelBuilder, barColor = 'var(--primary)') {
@@ -1685,21 +1781,7 @@ const app = {
     renderReportTrend() {
         const container = document.getElementById('reportDailyTrendChart');
         if (!container || !this.reportData) return;
-        const trend = this.reportData.dailyTrend || [];
-        const values = trend.map(item => Number(item.booking_count || 0));
-        if (values.length === 0 || Math.max(...values) === 0) {
-            container.innerHTML = '<div class="report-card-title">每日趋势</div><div style="text-align:center;padding:34px;color:var(--text-secondary)">暂无数据</div>';
-            return;
-        }
-        const max = Math.max(...values);
-        container.innerHTML = `<div class="report-card-title">每日趋势</div>
-            <div class="report-card-subtitle">按日期查看当前月份预订热度</div>
-            <div class="report-trend-bars">${trend.map(item => {
-                const count = Number(item.booking_count || 0);
-                const height = Math.max(8, Math.round(count / max * 100));
-                const label = String(item.booking_date || '').slice(5);
-                return `<div class="report-trend-bar" title="${this.escapeHtml(label)} ${count}次" style="height:${height}%"></div>`;
-            }).join('')}</div>`;
+        this.renderReportLineChart(container, '每日趋势', this.reportData.dailyTrend || []);
     },
 
     changeReportMonth(delta) {

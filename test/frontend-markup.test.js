@@ -175,6 +175,8 @@ test('admin reports expose responsive dashboard anchors and export controls', ()
     assert.match(html, /reportAttendeeInsight/);
     assert.match(html, /report-crystal-hero/);
     assert.match(html, /report-chip/);
+    assert.match(html, /report-donut-chart/);
+    assert.match(html, /report-line-chart/);
     assert.match(appJs, /roomTypeUsage/);
     assert.match(appJs, /regionUsage/);
     assert.match(appJs, /groupUsage/);
@@ -182,6 +184,11 @@ test('admin reports expose responsive dashboard anchors and export controls', ()
     assert.match(appJs, /attendeeStats/);
     assert.match(appJs, /renderReportKpis/);
     assert.match(appJs, /renderReportTrend/);
+    assert.match(appJs, /renderReportDonut/);
+    assert.match(appJs, /renderReportLineChart/);
+    assert.match(appJs, /report-donut-ring/);
+    assert.match(appJs, /report-line-path/);
+    assert.match(appJs, /report-line-area/);
 });
 
 test('admin room and user management expose mobile card interactions', () => {
