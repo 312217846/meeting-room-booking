@@ -40,13 +40,13 @@ function loadFrontendApp(windowOverrides = {}, sandboxOverrides = {}) {
 
 test('login page uses Utopia V2 branding and no WeChat login button', () => {
     assert.match(html, /utopia-logo\.png/);
-    assert.match(html, /hong-kong-login-bg-gpt\.png/);
+    assert.match(html, /hong-kong-harbor-login-v2\.png/);
     assert.match(html, /login-page::before/);
-    assert.match(html, /香港维港城市背景/);
+    assert.match(html, /香港维港城市海景背景/);
     assert.match(html, /会议室、培训室预订系统/);
     assert.match(html, /尖沙咀 港威大廈 5座26樓2601室/);
     assert.doesNotMatch(html, /微信登录/);
-    assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-login-bg-gpt.png')), true);
+    assert.equal(fs.existsSync(path.join(repoRoot, 'public', 'img', 'hong-kong-harbor-login-v2.png')), true);
 });
 
 test('login page exposes reference-style glass city harbor layout anchors', () => {
