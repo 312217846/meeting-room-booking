@@ -1943,16 +1943,18 @@
             padding: 48px 24px;
         }
 
-        /* 香港维港城市背景 */
+        /* 香港维港城市海景背景 */
         .login-page::before {
             content: "";
             position: absolute;
             inset: 0;
             z-index: -2;
-            background-image: url('img/hong-kong-login-bg-gpt.png');
+            background-image:
+                linear-gradient(135deg, rgba(247,251,255,0.18), rgba(247,251,255,0.42)),
+                url('img/hong-kong-harbor-login-v2.png');
             background-size: cover;
             background-position: center;
-            transform: scale(1.03);
+            transform: scale(1.02);
         }
 
         .login-page::after {
