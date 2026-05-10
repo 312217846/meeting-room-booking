@@ -2370,27 +2370,91 @@
         }
 
         .report-crystal-hero {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 16px;
-            padding: 20px;
+            display: grid;
+            gap: 18px;
+            margin-bottom: 18px;
+            padding: 24px;
             border: 1px solid rgba(255,255,255,0.82);
-            border-radius: 22px;
+            border-radius: 28px;
             background:
-                linear-gradient(135deg, rgba(255,255,255,0.86), rgba(248,251,255,0.58)),
-                radial-gradient(circle at 92% 18%, rgba(229,201,131,0.28), transparent 36%);
-            box-shadow: var(--crystal-shadow-soft);
+                linear-gradient(135deg, rgba(255,255,255,0.92), rgba(247,251,255,0.66) 56%, rgba(250,245,232,0.78)),
+                linear-gradient(115deg, rgba(229,201,131,0.2), rgba(255,255,255,0) 44%);
+            box-shadow: 0 26px 70px rgba(84,100,116,0.14), inset 0 1px 0 rgba(255,255,255,0.92);
             -webkit-backdrop-filter: blur(24px) saturate(175%);
             backdrop-filter: blur(24px) saturate(175%);
         }
 
+        .report-apple-dashboard {
+            grid-template-columns: minmax(0, 0.95fr) minmax(280px, 1.05fr);
+            align-items: stretch;
+        }
+
+        .report-hero-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 168px;
+        }
+
         .report-hero-title {
             margin-top: 4px;
-            font-size: 26px;
+            font-size: 34px;
             font-weight: 850;
             color: var(--text-primary);
+            line-height: 1.06;
+        }
+
+        .report-hero-note {
+            max-width: 360px;
+            margin-top: 12px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .report-hero-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .report-hero-metric {
+            min-height: 78px;
+            padding: 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.74);
+            background: rgba(255,255,255,0.58);
+            box-shadow: 0 16px 34px rgba(84,100,116,0.08), inset 0 1px 0 rgba(255,255,255,0.86);
+        }
+
+        .report-hero-metric.primary {
+            background: linear-gradient(135deg, rgba(229,201,131,0.94), rgba(201,169,110,0.76));
+            border-color: rgba(255,255,255,0.64);
+            color: #fff;
+            box-shadow: 0 20px 42px rgba(156,123,60,0.18);
+        }
+
+        .report-hero-metric-value {
+            font-size: 28px;
+            font-weight: 860;
+            line-height: 1;
+        }
+
+        .report-hero-metric-label {
+            margin-top: 8px;
+            color: inherit;
+            opacity: 0.72;
+            font-size: 12px;
+            font-weight: 760;
+        }
+
+        .report-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 18px;
         }
 
         .report-chip {
@@ -2428,14 +2492,25 @@
         }
 
         .report-kpi-grid,
-        .report-dashboard-grid {
+        .report-dashboard-grid,
+        .report-primary-grid {
             display: grid;
             gap: 14px;
         }
 
         .report-kpi-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            margin-bottom: 16px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-bottom: 18px;
+        }
+
+        .report-primary-grid {
+            grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.8fr);
+            align-items: stretch;
+            margin-bottom: 14px;
+        }
+
+        .report-support-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .report-kpi-card,
@@ -2452,6 +2527,27 @@
         .report-kpi-card {
             position: relative;
             overflow: hidden;
+            min-height: 92px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.54);
+        }
+
+        .report-card-feature {
+            min-height: 306px;
+            border-radius: 26px;
+            padding: 20px;
+        }
+
+        .report-card-line {
+            grid-row: span 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .report-card-donut {
+            min-height: 214px;
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.74), rgba(247,251,255,0.52));
         }
 
         .report-kpi-card::after {
@@ -2586,14 +2682,27 @@
 
         .report-line-chart {
             position: relative;
-            min-height: 198px;
+            min-height: 238px;
             padding: 10px 0 0;
+        }
+
+        .report-card-line .report-line-chart {
+            flex: 1;
+            min-height: 326px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .report-line-svg {
             width: 100%;
-            height: 172px;
+            height: 210px;
             overflow: visible;
+        }
+
+        .report-card-line .report-line-svg {
+            flex: 1;
+            min-height: 284px;
         }
 
         .report-line-grid {
@@ -2809,9 +2918,9 @@
                 grid-template-columns: repeat(4, minmax(112px, 1fr));
             }
             .report-kpi-grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
-            .report-dashboard-grid {
+            .report-support-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             .report-card.wide {
@@ -2820,9 +2929,11 @@
         }
 
         @media (max-width: 768px) {
+            .report-apple-dashboard {
+                grid-template-columns: 1fr;
+            }
             .report-crystal-hero {
                 align-items: stretch;
-                flex-direction: column;
                 border-radius: 18px;
                 padding: 16px;
             }
@@ -2838,6 +2949,25 @@
             .report-period-controls .report-chip,
             .report-export-actions .btn-primary {
                 width: 100% !important;
+            }
+            .report-hero-actions {
+                display: grid;
+            }
+            .report-hero-metrics,
+            .report-kpi-grid,
+            .report-primary-grid,
+            .report-support-grid {
+                grid-template-columns: 1fr;
+            }
+            .report-card-line {
+                grid-row: auto;
+            }
+            .report-card-line .report-line-chart {
+                min-height: 190px;
+            }
+            .report-card-line .report-line-svg {
+                min-height: 0;
+                height: 160px;
             }
             .report-insight-strip {
                 grid-template-columns: 1fr;
@@ -3152,30 +3282,39 @@
                             <div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>姓名</th><th>英文名</th><th>手机</th><th>角色</th><th>地区</th><th>组别</th><th>权限</th><th>每日上限</th><th>状态</th><th>重置密码</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="adminUserTableBody"></tbody></table></div>
                         </div>
                         <div id="adminTab-reports" class="admin-tab-content">
-                            <div class="report-crystal-hero">
-                                <div>
+                            <div class="report-crystal-hero report-apple-dashboard">
+                                <div class="report-hero-copy">
+                                    <div>
                                     <div class="report-card-subtitle">数据驾驶舱</div>
                                     <div class="report-hero-title">会议室运营概览</div>
                                     <div id="reportPeriod" class="report-period-label"></div>
+                                        <div class="report-hero-note">以当前月份为核心，快速查看预约效率、参与人数、热门时段和空间使用结构。</div>
+                                    </div>
+                                    <div class="report-hero-actions">
+                                        <div class="report-card-subtitle">月度视图</div>
+                                        <div class="report-period-controls">
+                                            <button class="report-chip" type="button" onclick="app.changeReportMonth(-1)">上月</button>
+                                            <button class="report-chip" type="button" onclick="app.changeReportMonth(1)">下月</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="report-period-controls">
-                                    <button class="report-chip" type="button" onclick="app.changeReportMonth(-1)">上月</button>
-                                    <button class="report-chip" type="button" onclick="app.changeReportMonth(1)">下月</button>
-                                </div>
+                                <div class="report-hero-metrics" id="reportHeroMetrics"></div>
                             </div>
                             <div class="report-insight-strip" id="reportInsightStrip"></div>
                             <div class="report-kpi-grid" id="reportKpiGrid"></div>
-                            <div class="report-dashboard-grid" id="reportDashboardGrid">
+                            <div class="report-primary-grid">
+                                <div class="report-card report-card-feature report-card-line" id="reportDailyTrendChart"></div>
+                                <div class="report-card report-card-donut" id="reportRoomTypeChart"></div>
+                                <div class="report-card report-card-donut" id="reportPurposeChart"></div>
+                            </div>
+                            <div class="report-dashboard-grid report-support-grid" id="reportDashboardGrid">
                                 <div class="report-card" id="reportAttendeeInsight"></div>
                                 <div class="report-card" id="roomUsageChart"></div>
                                 <div class="report-card" id="userUsageChart"></div>
-                                <div class="report-card" id="reportRoomTypeChart"></div>
-                                <div class="report-card" id="reportPurposeChart"></div>
                                 <div class="report-card" id="reportRegionChart"></div>
                                 <div class="report-card" id="reportGroupChart"></div>
                                 <div class="report-card wide" id="reportTimeHeatmapChart"></div>
                                 <div class="report-card" id="bookingUsageChart"></div>
-                                <div class="report-card wide" id="reportDailyTrendChart"></div>
                             </div>
                             <div class="report-export-toolbar" id="reportExportToolbar">
                                 <div class="report-card-subtitle">导出当前月份数据</div>

@@ -1559,6 +1559,7 @@ const app = {
         if (!this.reportData) return;
         const periodEl = document.getElementById('reportPeriod');
         if (periodEl) periodEl.textContent = `${this.currentReportPeriod.year}年${this.currentReportPeriod.month}月`;
+        this.renderReportHeroMetrics();
         this.renderReportKpis();
         this.renderReportInsightStrip();
         this.renderReportAttendeeInsight();
@@ -1699,6 +1700,25 @@ const app = {
             const hoursText = minutes > 0 ? ` · ${Math.round(minutes / 60 * 10) / 10}h` : '';
             return `<div class="chart-row"><div class="chart-label">${i + 1}. ${this.escapeHtml(labelBuilder(item))}</div><div class="chart-bar-wrapper"><div class="chart-bar" style="width:${count / max * 100}%;background:${barColor}"></div><span class="chart-value">${count}次${hoursText}</span></div></div>`;
         }).join('')}</div>`;
+    },
+
+    renderReportHeroMetrics() {
+        const container = document.getElementById('reportHeroMetrics');
+        if (!container || !this.reportData) return;
+        const stats = this.reportData.totalStats || {};
+        const attendeeStats = this.reportData.attendeeStats || {};
+        const metrics = [
+            ['总预订', stats.totalBookings || 0, '当前月份', 'primary'],
+            ['总时长', `${stats.totalHours || 0}h`, `平均 ${stats.avgDuration || 0} 分钟`, ''],
+            ['参与人数', stats.totalAttendees || attendeeStats.totalAttendees || 0, `单场平均 ${stats.avgAttendees || attendeeStats.avgAttendees || 0} 人`, ''],
+            ['热门时段', stats.peakHour || '-', '高峰预约时间', '']
+        ];
+        container.innerHTML = metrics.map(([label, value, sub, tone]) => `
+            <div class="report-hero-metric ${tone}">
+                <div class="report-hero-metric-value">${this.escapeHtml(value)}</div>
+                <div class="report-hero-metric-label">${this.escapeHtml(label)} · ${this.escapeHtml(sub)}</div>
+            </div>
+        `).join('');
     },
 
     renderReportKpis() {

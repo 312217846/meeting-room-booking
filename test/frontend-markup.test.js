@@ -174,6 +174,10 @@ test('admin reports expose responsive dashboard anchors and export controls', ()
     assert.match(html, /reportTimeHeatmapChart/);
     assert.match(html, /reportAttendeeInsight/);
     assert.match(html, /report-crystal-hero/);
+    assert.match(html, /report-apple-dashboard/);
+    assert.match(html, /reportHeroMetrics/);
+    assert.match(html, /report-primary-grid/);
+    assert.match(html, /report-support-grid/);
     assert.match(html, /report-chip/);
     assert.match(html, /report-donut-chart/);
     assert.match(html, /report-line-chart/);
@@ -183,6 +187,7 @@ test('admin reports expose responsive dashboard anchors and export controls', ()
     assert.match(appJs, /hourlyUsage/);
     assert.match(appJs, /attendeeStats/);
     assert.match(appJs, /renderReportKpis/);
+    assert.match(appJs, /renderReportHeroMetrics/);
     assert.match(appJs, /renderReportTrend/);
     assert.match(appJs, /renderReportDonut/);
     assert.match(appJs, /renderReportLineChart/);
