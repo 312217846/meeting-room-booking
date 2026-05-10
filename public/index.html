@@ -2011,6 +2011,188 @@
             backdrop-filter: blur(24px) saturate(175%);
         }
 
+        .login-reference-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto auto;
+            align-items: center;
+            padding: 28px;
+        }
+
+        .login-brand-bar,
+        .login-legal-bar {
+            width: min(100%, 1280px);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .login-brand-lockup {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #31BFA6;
+            font-size: 26px;
+            font-weight: 860;
+        }
+
+        .login-brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            object-fit: cover;
+            box-shadow: 0 10px 28px rgba(49, 191, 166, 0.18);
+        }
+
+        .login-language-select,
+        .login-link-button,
+        .login-country-code {
+            border: 0;
+            background: rgba(255,255,255,0.48);
+            color: var(--text-primary);
+            border-radius: 999px;
+            min-height: 34px;
+            padding: 0 12px;
+            font-weight: 760;
+            cursor: pointer;
+        }
+
+        .login-hero-content {
+            width: min(100%, 520px);
+            margin: 0 auto;
+            display: grid;
+            justify-items: center;
+            text-align: center;
+        }
+
+        .login-iso-hero {
+            width: 190px;
+            height: 190px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: rgba(255,255,255,0.42);
+            border: 1px solid rgba(255,255,255,0.72);
+            box-shadow: 0 26px 70px rgba(31, 55, 70, 0.12);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+        }
+
+        .login-iso-logo {
+            width: 168px;
+            height: 168px;
+            border-radius: 999px;
+            object-fit: cover;
+        }
+
+        .login-glass-card {
+            width: min(100%, 430px);
+            max-width: 430px;
+            margin-top: 28px;
+            padding: 24px;
+            border-radius: 28px;
+        }
+
+        .login-card-title {
+            margin-bottom: 16px;
+            text-align: left;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 850;
+        }
+
+        .login-form-row {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 0 14px;
+            border: 1px solid rgba(255,255,255,0.72);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.62);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.86);
+        }
+
+        .login-input {
+            min-width: 0;
+            flex: 1;
+            border: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+        }
+
+        .login-input-icon,
+        .login-input-eye {
+            color: var(--text-secondary);
+            font-weight: 800;
+        }
+
+        .login-card-options {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 6px 0 18px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .login-remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .login-primary-action,
+        .login-alt-action {
+            width: 100%;
+            min-height: 48px;
+            border-radius: 12px;
+            font-weight: 820;
+        }
+
+        .login-primary-action {
+            max-width: none;
+        }
+
+        .login-alt-action {
+            border: 1px solid rgba(191,204,218,0.48);
+            background: rgba(255,255,255,0.52);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .login-divider {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: "";
+            height: 1px;
+            background: rgba(191,204,218,0.42);
+        }
+
+        .login-admin-note,
+        .login-legal-bar {
+            color: rgba(45, 56, 68, 0.72);
+            font-size: 12px;
+        }
+
+        .login-admin-note {
+            margin-top: 16px;
+        }
+
         .form-input,
         .login-card .form-input,
         .form-textarea,
@@ -2955,6 +3137,57 @@
         }
 
         @media (max-width: 768px) {
+            .login-reference-shell {
+                grid-template-rows: auto 1fr auto auto;
+                gap: 14px;
+                padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+            }
+            .login-brand-bar,
+            .login-legal-bar {
+                gap: 10px;
+            }
+            .login-brand-lockup {
+                font-size: 20px;
+            }
+            .login-brand-logo {
+                width: 34px;
+                height: 34px;
+            }
+            .login-language-select,
+            .login-link-button,
+            .login-country-code {
+                padding: 0 10px;
+                font-size: 12px;
+            }
+            .login-iso-hero {
+                width: 132px;
+                height: 132px;
+            }
+            .login-iso-logo {
+                width: 116px;
+                height: 116px;
+            }
+            .login-title {
+                font-size: 22px;
+            }
+            .login-subtitle {
+                margin-bottom: 0;
+            }
+            .login-glass-card {
+                margin-top: 20px;
+                padding: 20px;
+                border-radius: 22px;
+            }
+            .login-card-options {
+                align-items: center;
+            }
+            .login-legal-bar {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .pmagic-powered {
+                margin-top: 4px;
+            }
             .report-apple-dashboard {
                 grid-template-columns: 1fr;
             }
@@ -3067,28 +3300,58 @@
     </svg>
     <div id="app">
         <!-- 登录页 -->
-        <div id="loginPage" class="login-page">
-            <div class="login-logo">
-                <img src="img/utopia-logo.png" alt="Utopia" style="width:100px;height:100px;border-radius:20px;object-fit:cover;">
-            </div>
-            <h1 class="login-title">会议室、培训室预订系统</h1>
-            <p class="login-subtitle">尖沙咀 港威大廈 5座26樓2601室</p>
-            <div class="login-card">
-                <div id="loginForm">
-                    <div class="form-group"><label>香港手机号 (+852)</label><input type="tel" id="loginPhone" class="form-input" placeholder="请输入 +852 手机号"></div>
-                    <div class="form-group"><label>密码</label><input type="password" id="loginPassword" class="form-input" placeholder="请输入密码"></div>
-                    <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleLogin()">登 录</button>
-                    <div class="form-footer">还没有账号？<a onclick="app.showRegisterForm()">立即注册</a></div>
+        <div id="loginPage" class="login-page login-reference-shell">
+            <div class="login-brand-bar">
+                <div class="login-brand-lockup">
+                    <img src="img/utopia-logo.png" alt="UTOPIA" class="login-brand-logo">
+                    <span class="login-brand-name">UTOPIA</span>
                 </div>
-                <div id="registerForm" style="display:none;">
-                    <div class="form-group"><label>姓名</label><input type="text" id="regName" class="form-input" placeholder="请输入姓名"></div>
-                    <div class="form-group"><label>香港手机号 (+852)</label><input type="tel" id="regPhone" class="form-input" placeholder="请输入 +852 手机号"></div>
-                    <div class="form-group"><label>密码</label><input type="password" id="regPassword" class="form-input" placeholder="至少6位密码"></div>
-                    <div class="form-group"><label>性别</label><div class="gender-group"><label><input type="radio" name="gender" value="male"> 男</label><label><input type="radio" name="gender" value="female"> 女</label></div></div>
-                    <button class="wechat-login-btn" style="background:linear-gradient(135deg,#C9A96E,#A88B4A);" onclick="app.handleRegister()">注 册</button>
-                    <div class="form-footer">已有账号？<a onclick="app.showLoginForm()">返回登录</a></div>
-                </div>
+                <button class="login-language-select" type="button">繁體中文⌄</button>
             </div>
+
+            <section class="login-hero-content" aria-label="会议室、培训室预订系统登录">
+                <div class="login-iso-hero">
+                    <img src="img/utopia-logo.png" alt="UTOPIA ISO" class="login-iso-logo">
+                </div>
+                <h1 class="login-title">会议室、培训室预订系统</h1>
+                <p class="login-subtitle">尖沙咀 港威大廈 5座26樓2601室</p>
+
+                <div class="login-card login-glass-card">
+                    <div id="loginForm">
+                        <div class="login-card-title">用户登录</div>
+                        <div class="login-form-row phone-row">
+                            <span class="login-input-icon">□</span>
+                            <button class="login-country-code" type="button">+852⌄</button>
+                            <input type="tel" id="loginPhone" class="form-input login-input" placeholder="输入手机号码">
+                        </div>
+                        <div class="login-form-row">
+                            <span class="login-input-icon">◇</span>
+                            <input type="password" id="loginPassword" class="form-input login-input" placeholder="输入密码">
+                            <span class="login-input-eye">◎</span>
+                        </div>
+                        <div class="login-card-options">
+                            <label class="login-remember"><input type="checkbox"> 记住我</label>
+                            <button type="button" class="login-link-button">忘记密码?</button>
+                        </div>
+                        <button class="wechat-login-btn login-primary-action" onclick="app.handleLogin()">登录</button>
+                        <div class="login-divider"><span>或</span></div>
+                        <button class="login-alt-action" type="button">使用验证码登录</button>
+                        <div class="login-admin-note">首次使用？联系管理员开通账号</div>
+                    </div>
+                    <div id="registerForm" class="login-register-panel" style="display:none;">
+                        <div class="login-card-title">账号申请</div>
+                        <p class="login-admin-note">请联系管理员开通账号后登录。</p>
+                        <button class="login-alt-action" type="button" onclick="app.showLoginForm()">返回登录</button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="login-legal-bar">
+                <span>© UTOPIA 2026 保留所有权利</span>
+                <span>隐私政策</span>
+                <span>使用条款</span>
+            </div>
+
             <div class="pmagic-powered" aria-label="Powered by PMagic AI">
                 <span class="powered-text">Powered by</span>
                 <span class="pmagic-brand-lockup" aria-hidden="true">
