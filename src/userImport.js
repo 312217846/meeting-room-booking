@@ -56,7 +56,7 @@ function parseUserImportText(text) {
     const phone = normalizeHongKongPhone(raw.phone);
 
     if (!phone) {
-      errors.push({ rowNumber, message: '手机号必须是香港手机号' });
+      errors.push({ rowNumber, message: '手机号格式不正确' });
       return;
     }
 

@@ -3780,8 +3780,11 @@
                         <div class="login-card-title">用户登录</div>
                         <div class="login-form-row phone-row">
                             <span class="login-input-icon" aria-hidden="true">□</span>
-                            <button class="login-country-code" type="button" aria-label="香港区号 +852">+852⌄</button>
-                            <input type="tel" id="loginPhone" class="form-input login-input" placeholder="输入手机号码" aria-label="香港手机号">
+                            <select class="login-country-code" id="loginCountryCode" aria-label="选择区号">
+                                <option value="+852">+852</option>
+                                <option value="+86">+86</option>
+                            </select>
+                            <input type="tel" id="loginPhone" class="form-input login-input" placeholder="输入手机号码" aria-label="手机号">
                         </div>
                         <div class="login-form-row">
                             <span class="login-input-icon" aria-hidden="true">◇</span>

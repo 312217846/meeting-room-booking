@@ -523,7 +523,9 @@ const app = {
             return;
         }
 
-        const phone = document.getElementById('loginPhone')?.value.trim() || '';
+        const rawPhone = document.getElementById('loginPhone')?.value.trim() || '';
+        const countryCode = document.getElementById('loginCountryCode')?.value || '+852';
+        const phone = countryCode + rawPhone;
         const password = document.getElementById('loginPassword')?.value || '';
         if (!phone || !password) { this.showToast('请输入手机号和密码', 'error'); return; }
         const triggerEvent = typeof event !== 'undefined' ? event : null;
@@ -549,7 +551,9 @@ const app = {
 
     async handleRegister() {
         const name = document.getElementById('regName').value.trim();
-        const phone = document.getElementById('regPhone').value.trim();
+        const rawPhone = document.getElementById('regPhone').value.trim();
+        const regCountryCode = document.getElementById('regCountryCode')?.value || '+852';
+        const phone = regCountryCode + rawPhone;
         const password = document.getElementById('regPassword').value;
         const gender = document.querySelector('input[name="gender"]:checked')?.value;
         if (!name || !phone || !password) { this.showToast('请填写完整信息', 'error'); return; }

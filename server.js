@@ -27,11 +27,11 @@ const PORT = 3000;
 
 // 数据库配置
 const DB_CONFIG = {
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: '4f7a9b2e3c1d4e6f',
-    database: 'meeting_room_booking',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'meeting_room_booking',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -418,7 +418,7 @@ app.post('/api/auth/register', async (req, res) => {
     
     const normalizedPhone = normalizeHongKongPhone(phone);
     if (!normalizedPhone) {
-        return res.status(400).json({ code: 400, message: '手机号必须是香港手机号' });
+        return res.status(400).json({ code: 400, message: '手机号格式不正确' });
     }
     
     // 验证密码长度
@@ -511,7 +511,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     const normalizedPhone = normalizeHongKongPhone(phone);
     if (!normalizedPhone) {
-        return res.status(400).json({ code: 400, message: '手机号必须是香港手机号' });
+        return res.status(400).json({ code: 400, message: '手机号格式不正确' });
     }
     
     try {

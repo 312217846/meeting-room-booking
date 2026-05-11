@@ -19,7 +19,7 @@ function getV2ColumnDefinitions() {
 }
 
 async function columnExists(pool, tableName, columnName) {
-  const [rows] = await pool.execute(`SHOW COLUMNS FROM ${tableName} LIKE ?`, [columnName]);
+  const [rows] = await pool.query(`SHOW COLUMNS FROM ${tableName} LIKE ?`, [columnName]);
   return rows.length > 0;
 }
 
