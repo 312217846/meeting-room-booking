@@ -3797,15 +3797,36 @@
                         </div>
                         <button class="wechat-login-btn login-primary-action" onclick="app.handleLogin()">登录</button>
                         <div class="login-divider"><span>或</span></div>
-                        <button class="login-alt-action" type="button">使用验证码登录</button>
-                        <div class="login-admin-note">首次使用？联系管理员开通账号</div>
+                        <button class="login-alt-action" type="button" onclick="app.showRegisterForm()">注册新用户</button>
                     </div>
                     <div id="registerForm" class="login-register-panel" style="display:none;">
-                        <div class="login-card-title">账号申请</div>
-                        <p class="login-admin-note">请联系管理员开通账号后登录。</p>
-                        <input type="hidden" id="regName" value="">
-                        <input type="hidden" id="regPhone" value="">
-                        <input type="hidden" id="regPassword" value="">
+                        <div class="login-card-title">注册新用户</div>
+                        <div class="login-form-row">
+                            <span class="login-input-icon" aria-hidden="true">○</span>
+                            <input type="text" id="regName" class="form-input login-input" placeholder="输入姓名" aria-label="姓名">
+                        </div>
+                        <div class="login-form-row phone-row">
+                            <span class="login-input-icon" aria-hidden="true">□</span>
+                            <select class="login-country-code" id="regCountryCode" aria-label="选择区号">
+                                <option value="+852">+852</option>
+                                <option value="+86">+86</option>
+                            </select>
+                            <input type="tel" id="regPhone" class="form-input login-input" placeholder="输入手机号码" aria-label="手机号">
+                        </div>
+                        <div class="login-form-row">
+                            <span class="login-input-icon" aria-hidden="true">◇</span>
+                            <input type="password" id="regPassword" class="form-input login-input" placeholder="设置密码（至少6位）" aria-label="密码">
+                        </div>
+                        <div class="login-form-row" style="justify-content:center;gap:24px;">
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:14px;color:var(--text-secondary);">
+                                <input type="radio" name="gender" value="male"> 先生
+                            </label>
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:14px;color:var(--text-secondary);">
+                                <input type="radio" name="gender" value="female"> 女士
+                            </label>
+                        </div>
+                        <button class="wechat-login-btn login-primary-action" onclick="app.handleRegister()">注册</button>
+                        <div class="login-divider"><span>或</span></div>
                         <button class="login-alt-action" type="button" onclick="app.showLoginForm()">返回登录</button>
                     </div>
                 </div>

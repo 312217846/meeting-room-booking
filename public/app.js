@@ -556,7 +556,7 @@ const app = {
         const phone = regCountryCode + rawPhone;
         const password = document.getElementById('regPassword').value;
         const gender = document.querySelector('input[name="gender"]:checked')?.value;
-        if (!name || !phone || !password) { this.showToast('请填写完整信息', 'error'); return; }
+        if (!name || !rawPhone || !password) { this.showToast('请填写完整信息', 'error'); return; }
         if (password.length < 6) { this.showToast('密码长度至少6位', 'error'); return; }
         try {
             const res = await API.register({ name, phone, password, gender });
