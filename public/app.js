@@ -721,7 +721,7 @@ const app = {
         if (pt) pt.textContent = titles[tab];
 
         if (tab === 'rooms') this.renderRooms();
-        else if (tab === 'booking') { this.updateRoomTypeFilterButtons(); this.renderRoomSelect(); this.renderTimeSlots(); this.updateSubmitButtonState(); }
+        else if (tab === 'booking') { this.renderRoomSelect(); this.renderTimeSlots(); this.updateSubmitButtonState(); }
         else if (tab === 'myBookings') this.renderMyBookings();
         else if (tab === 'admin') this.switchAdminTab('rooms');
     },
@@ -929,9 +929,9 @@ const app = {
         if (!container) return;
         if (ROOMS_DATA.length === 0) await this.loadRoomsData();
         container.innerHTML = '';
-        const rooms = ROOMS_DATA.filter(room => this.normalizeRoomType(room) === this.roomTypeFilter);
+        const rooms = ROOMS_DATA;
         if (rooms.length === 0) {
-            container.innerHTML = `<div class="time-slot-placeholder">暂无${this.getRoomTypeLabel(this.roomTypeFilter)}</div>`;
+            container.innerHTML = '<div class="time-slot-placeholder">暂无可预订的会议室</div>';
             return;
         }
         rooms.forEach(room => {

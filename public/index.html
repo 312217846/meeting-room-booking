@@ -3945,29 +3945,23 @@
                         <div class="booking-hours-note">可预订时间：08:00-20:00，每次以30分钟为单位。</div>
                     </div>
 
-                    <div class="room-type-filter booking-type-segment" id="roomTypeFilter" role="group" aria-label="会议室类型">
-                        <button class="tab-btn active" type="button" data-room-type="normal" onclick="app.setRoomTypeFilter('normal')">会议室</button>
-                        <button class="tab-btn" type="button" data-room-type="training" onclick="app.setRoomTypeFilter('training')">培训室</button>
-                        <button class="tab-btn" type="button" data-room-type="vip" onclick="app.setRoomTypeFilter('vip')">VIP室</button>
-                    </div>
-
                     <div class="booking-workspace-grid">
                         <section class="booking-section booking-calendar-panel">
                             <div class="booking-section-title"><span>📆</span> 选择日期</div>
                             <div class="date-selector" id="dateSelector"></div>
                         </section>
 
-                        <section class="booking-section booking-time-panel time-selection-area">
-                            <div class="booking-section-title"><span>⏰</span> 选择时间</div>
-                            <div class="time-slots-grid time-grid" id="timeGrid"></div>
+                        <section class="booking-section booking-room-panel">
+                            <div class="booking-section-title"><span>🏢</span> 选择会议室</div>
+                            <div class="room-select-container booking-room-gallery" id="roomSelectContainer">
+                                <div id="roomSelectList"></div>
+                            </div>
                         </section>
                     </div>
 
-                    <section class="booking-section booking-room-panel">
-                        <div class="booking-section-title"><span>🏢</span> 选择会议室</div>
-                        <div class="room-select-container booking-room-gallery" id="roomSelectContainer">
-                            <div id="roomSelectList"></div>
-                        </div>
+                    <section class="booking-section booking-time-panel time-selection-area">
+                        <div class="booking-section-title"><span>⏰</span> 选择时间</div>
+                        <div class="time-slots-grid time-grid" id="timeGrid"></div>
                     </section>
 
                     <section class="booking-section booking-info-panel">
