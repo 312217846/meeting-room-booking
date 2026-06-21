@@ -1,0 +1,11 @@
+<svg width="188" height="44" viewBox="0 0 188 44" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PMagic AI">
+  <g transform="translate(3 4)">
+    <rect x="14" y="-1" width="8" height="38" rx="2" transform="rotate(45 14 -1)" fill="#F4D44D"/>
+    <rect x="14" y="-1" width="8" height="38" rx="2" transform="rotate(-45 14 -1)" fill="#EA70B6"/>
+    <rect x="0" y="14" width="36" height="8" rx="2" fill="#6A4DF5"/>
+    <rect x="14" y="0" width="8" height="36" rx="2" fill="#7F62FF"/>
+    <circle cx="18" cy="18" r="5" fill="#FF9C5A"/>
+  </g>
+  <text x="50" y="29" fill="#111111" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="23" font-weight="700" letter-spacing="-0.2">PMagic AI</text>
+  <text x="164" y="17" fill="#111111" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" font-size="8" font-weight="700">TM</text>
+</svg>
